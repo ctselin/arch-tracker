@@ -794,7 +794,10 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
 <div class="fab-group">
   <button class="fab fab-print" onclick="printReport()">⎙ Print Report</button>
   <button class="fab fab-csv" onclick="saveData()">↓ Save Data</button>
-  <button class="fab" style="background:var(--surface);color:var(--text);border:1px solid var(--border);box-shadow:0 3px 12px rgba(0,0,0,0.18)" onclick="document.getElementById('loadFileInput').click()">↑ Load Data</button>
+  <label class="fab" style="background:var(--surface);color:var(--text);border:1px solid var(--border);box-shadow:0 3px 12px rgba(0,0,0,0.18);cursor:pointer;">
+    ↑ Load Data
+    <input type="file" accept=".json,.decisiontracker,application/json" style="display:none" onchange="loadFromFile(this)">
+  </label>
 </div>
 
 <!-- ═══ NEW ENTRY MODAL ═══ -->
@@ -1195,7 +1198,10 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
     <p style="font-size:14px; margin-bottom:8px; font-weight:500;">Load existing data file?</p>
     <p style="font-size:12px; color:var(--text2); margin-bottom:24px;">Click Load to select your saved file, or Start Fresh to begin with an empty project.</p>
     <div style="display:flex; gap:10px; justify-content:center;">
-      <button class="btn-primary" onclick="triggerLoadFile()">↑ Load File</button>
+      <label class="btn-primary" style="cursor:pointer; display:inline-block; padding:7px 18px;">
+        ↑ Load File
+        <input type="file" accept=".json,.decisiontracker,application/json" style="display:none" onchange="loadFromFile(this)">
+      </label>
       <button class="btn-ghost" onclick="closeModal('loadPromptModal')">Start Fresh</button>
     </div>
   </div>
@@ -1635,9 +1641,6 @@ function openNewModal() {
   document.getElementById('f_assigned').value = '';
   openModal('newModal');
   setTimeout(() => document.getElementById('f_comment').focus(), 100);
-}
-  document.getElementById('f_followup').value = '';
-  document.getElementById('f_formatOther').style.display = 'none';
   openModal('newModal');
   setTimeout(() => document.getElementById('f_comment').focus(), 100);
 }
@@ -2184,35 +2187,53 @@ function saveData() {
 
 // ── LOAD DATA ──────────────────────────────────────────────────────────────
 function loadFromFile(input) {
-  const file = input.files[0];
-  if (!file) return; // user cancelled, do nothing
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (!data.issues) throw new Error('Invalid file');
-      issues       = data.issues       || [];
-      milestones   = data.milestones   || [];
-      project      = data.project      || 'Untitled Project';
-      counter      = data.counter      || issues.length;
-      projectInfo  = data.projectInfo  || {};
-      teamMembers  = data.teamMembers  || [];
-      docLinks     = data.docLinks     || [];
-      feePlan      = data.feePlan      || { total: 0, phases: [] };
-      save();
-      unsavedChanges = false;
-      render();
-      input.value = '';
-    } catch(err) {
-      alert('Could not read file.\n\nMake sure you are selecting a file previously saved from Decision Tracker (.json).');
-      input.value = '';
-    }
-  };
-  reader.onerror = () => {
-    alert('Could not read file. Please try again.');
-    input.value = '';
-  };
-  reader.readAsText(file);
+  try {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data.issues) {
+          alert('Invalid file — missing issues data.');
+          return;
+        }
+        // Update ALL state variables directly
+        issues      = data.issues      || [];
+        milestones  = data.milestones  || [];
+        project     = data.project     || 'Untitled Project';
+        counter     = parseInt(data.counter) || issues.length;
+        projectInfo = data.projectInfo || {};
+        teamMembers = data.teamMembers || [];
+        docLinks    = data.docLinks    || [];
+        feePlan     = data.feePlan     || { total: 0, phases: [] };
+        // Persist to localStorage
+        localStorage.setItem('dt_issues',      JSON.stringify(issues));
+        localStorage.setItem('dt_milestones',  JSON.stringify(milestones));
+        localStorage.setItem('dt_project',     project);
+        localStorage.setItem('dt_counter',     counter);
+        localStorage.setItem('dt_projectInfo', JSON.stringify(projectInfo));
+        localStorage.setItem('dt_team',        JSON.stringify(teamMembers));
+        localStorage.setItem('dt_docs',        JSON.stringify(docLinks));
+        localStorage.setItem('dt_fee',         JSON.stringify(feePlan));
+        unsavedChanges = false;
+        document.getElementById('loadPromptModal').classList.remove('open');
+        try {
+          render();
+        } catch(renderErr) {
+          alert('Loaded OK but render error: ' + renderErr.message);
+        }
+      } catch(err) {
+        alert('Parse error: ' + err.message);
+      }
+    };
+    reader.onerror = function() {
+      alert('File read error. Please try again.');
+    };
+    reader.readAsText(file);
+  } catch(err) {
+    alert('Unexpected error: ' + err.message);
+  }
 }
 
 // ── KEY SHORTCUTS ──────────────────────────────────────────────────────────
@@ -2273,7 +2294,6 @@ window.addEventListener('beforeunload', e => {
 });
 
 function triggerLoadFile() {
-  closeModal('loadPromptModal');
   document.getElementById('loadFileInput').click();
 }
 
