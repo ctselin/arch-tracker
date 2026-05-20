@@ -605,6 +605,44 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
   align-items: center; margin-bottom: 8px;
 }
 
+/* Phase toggle */
+.phase-toggle-group {
+  display: flex; gap: 4px; margin-top: 4px;
+}
+.phase-btn {
+  padding: 5px 14px; font-family: var(--mono); font-size: 11px;
+  border: 1px solid var(--border); background: transparent;
+  cursor: pointer; transition: all 0.15s; color: var(--text2);
+  letter-spacing: 0.06em;
+}
+.phase-btn:hover { background: var(--surface2); }
+.phase-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+/* Team copy button */
+.team-copy-btn {
+  background: transparent; border: 1px solid var(--border);
+  padding: 2px 8px; font-family: var(--mono); font-size: 9px;
+  cursor: pointer; color: var(--text2); transition: all 0.15s;
+  white-space: nowrap;
+}
+.team-copy-btn:hover { background: var(--blue); color: white; border-color: var(--blue); }
+.team-copy-btn.copied { background: var(--green); color: white; border-color: var(--green); }
+
+/* Team role tag */
+.team-role-tag {
+  font-family: var(--mono); font-size: 9px; padding: 1px 6px;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.team-role-owner      { background: #FEF3E2; color: #92400E; }
+.team-role-consultant { background: #EEF2FF; color: #3730A3; }
+.team-role-contractor { background: #F5F3FF; color: #5B21B6; }
+
+/* Doc path */
+.doc-path {
+  font-family: var(--mono); font-size: 11px; color: var(--text);
+  word-break: break-all;
+}
+
 /* Team */
 .team-table { width: 100%; border-collapse: collapse; }
 .team-table th {
@@ -616,18 +654,14 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
   padding: 10px 10px 10px 0; font-size: 12px;
   border-bottom: 1px solid var(--surface2); vertical-align: top;
 }
-.team-table td a { color: var(--blue); text-decoration: none; }
-.team-table td a:hover { text-decoration: underline; }
 .team-company { font-size: 10px; color: var(--text2); margin-top: 2px; font-family: var(--mono); }
 
 /* Docs */
 .doc-item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 0; border-bottom: 1px solid var(--surface2);
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--surface2);
 }
 .doc-item:last-child { border-bottom: none; }
-.doc-link { font-size: 13px; color: var(--blue); text-decoration: none; font-weight: 500; }
-.doc-link:hover { text-decoration: underline; }
 
 /* ── PRINT STYLES ── */
 @media print {
@@ -732,7 +766,15 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
     <div class="dash-card dash-wide">
       <div class="dash-card-header">
         <span class="dash-card-title">Project Info</span>
-        <button class="btn-sm" onclick="openModal('projectInfoModal')">Edit</button>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="phase-toggle-group" id="phaseToggleGroup">
+            <button class="phase-btn" onclick="setPhase('SD',this)">SD</button>
+            <button class="phase-btn" onclick="setPhase('DD',this)">DD</button>
+            <button class="phase-btn" onclick="setPhase('CD',this)">CD</button>
+            <button class="phase-btn" onclick="setPhase('CA',this)">CA</button>
+          </div>
+          <button class="btn-sm" onclick="openModal('projectInfoModal')">Edit</button>
+        </div>
       </div>
       <div id="dashProjectInfo"></div>
     </div>
@@ -752,6 +794,15 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
       <div id="dashFee"></div>
     </div>
 
+    <!-- Project Scope -->
+    <div class="dash-card dash-wide">
+      <div class="dash-card-header">
+        <span class="dash-card-title">Scope of Work</span>
+        <button class="btn-sm" onclick="openModal('scopeModal')">Edit</button>
+      </div>
+      <div id="dashScope"><div style="color:var(--text2);font-size:12px;">Click Edit to add project scope.</div></div>
+    </div>
+
     <!-- Team -->
     <div class="dash-card dash-wide">
       <div class="dash-card-header">
@@ -764,8 +815,8 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
     <!-- Documents -->
     <div class="dash-card">
       <div class="dash-card-header">
-        <span class="dash-card-title">Key Documents</span>
-        <button class="btn-sm btn-primary" onclick="openModal('docModal')">＋ Add Link</button>
+        <span class="dash-card-title">Key Documents &amp; Paths</span>
+        <button class="btn-sm btn-primary" onclick="openModal('docModal')">＋ Add</button>
       </div>
       <div id="dashDocs"></div>
     </div>
@@ -1143,25 +1194,37 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Name *</label>
-        <input class="form-input" id="mb_name" placeholder="First Last">
+        <input class="form-input" id="mb_name" placeholder="">
       </div>
       <div class="form-group">
+        <label class="form-label">Type</label>
+        <select class="form-select" id="mb_type">
+          <option value="">—</option>
+          <option value="owner">Owner</option>
+          <option value="consultant">Consultant</option>
+          <option value="contractor">Contractor</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
         <label class="form-label">Company</label>
-        <input class="form-input" id="mb_company" placeholder="e.g. BNAP, GBA">
+        <input class="form-input" id="mb_company" placeholder="">
+      </div>
       </div>
     </div>
     <div class="form-group">
       <label class="form-label">Role</label>
-      <input class="form-input" id="mb_role" placeholder="e.g. Project Architect, Structural Engineer">
+      <input class="form-input" id="mb_role" placeholder="">
     </div>
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Email</label>
-        <input class="form-input" id="mb_email" type="email" placeholder="name@company.com">
+        <input class="form-input" id="mb_email" type="email" placeholder="">
       </div>
       <div class="form-group">
         <label class="form-label">Phone</label>
-        <input class="form-input" id="mb_phone" placeholder="(907) 555-0100">
+        <input class="form-input" id="mb_phone" placeholder="">
       </div>
     </div>
     <div class="modal-footer">
@@ -1175,18 +1238,36 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
 <div class="modal-overlay" id="docModal">
   <div class="modal" style="width:440px">
     <button class="modal-close" onclick="closeModal('docModal')">✕</button>
-    <div class="modal-title">Add Document Link</div>
+    <div class="modal-title">Add Document / Path</div>
     <div class="form-group">
       <label class="form-label">Label *</label>
-      <input class="form-input" id="doc_label" placeholder="e.g. Drawing Set, Contract, Spec Book">
+      <input class="form-input" id="doc_label" placeholder="e.g. DD Drawing Set, Contract, Spec Book">
     </div>
     <div class="form-group">
-      <label class="form-label">URL *</label>
-      <input class="form-input" id="doc_url" placeholder="https://...">
+      <label class="form-label">Path or Location *</label>
+      <input class="form-input" id="doc_url" placeholder="e.g. 01_Drawings / DD Set / 24-171_DD.pdf">
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeModal('docModal')">Cancel</button>
       <button class="btn-primary" onclick="saveDoc()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCOPE MODAL ═══ -->
+<div class="modal-overlay" id="scopeModal">
+  <div class="modal" style="width:580px">
+    <button class="modal-close" onclick="closeModal('scopeModal')">✕</button>
+    <div class="modal-title">Scope of Work</div>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:12px;font-family:var(--mono)">
+      Use <strong>##</strong> for bold headings (e.g. <code>## Base Scope</code>), and <strong>-</strong> for bullet items.
+    </p>
+    <div class="form-group">
+      <textarea class="form-textarea" id="scope_text" style="min-height:280px;font-family:var(--mono);font-size:12px" placeholder="## Base Scope&#10;- Item one&#10;- Item two&#10;&#10;## Alternates&#10;- Alt 1: Description"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('scopeModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveScope()">Save</button>
     </div>
   </div>
 </div>
@@ -1217,6 +1298,7 @@ let projectInfo = JSON.parse(localStorage.getItem('dt_projectInfo') || '{}');
 let teamMembers = JSON.parse(localStorage.getItem('dt_team')        || '[]');
 let docLinks    = JSON.parse(localStorage.getItem('dt_docs')        || '[]');
 let feePlan     = JSON.parse(localStorage.getItem('dt_fee')         || '{"total":0,"phases":[]}');
+let scopeText   = localStorage.getItem('dt_scope') || '';
 let filter     = 'active';
 let showArchive = false;
 let dashboardVisible = false;
@@ -1247,6 +1329,7 @@ function save() {
   localStorage.setItem('dt_team',        JSON.stringify(teamMembers));
   localStorage.setItem('dt_docs',        JSON.stringify(docLinks));
   localStorage.setItem('dt_fee',         JSON.stringify(feePlan));
+  localStorage.setItem('dt_scope',       scopeText);
   markUnsaved();
 }
 function genId() { counter++; return 'D-' + String(counter).padStart(3,'0'); }
@@ -1618,9 +1701,13 @@ function openModal(id) {
     document.getElementById('pi_status').value      = pi.status    || 'Active';
     document.getElementById('pi_description').value = pi.description || '';
   }
+  if(id === 'scopeModal') {
+    document.getElementById('scope_text').value = scopeText || '';
+  }
   if(id === 'feeModal') { openFeeModal(); return; }
   if(id === 'memberModal') {
     ['mb_name','mb_company','mb_role','mb_email','mb_phone'].forEach(i => document.getElementById(i).value='');
+    document.getElementById('mb_type').value = '';
   }
   if(id === 'docModal') {
     ['doc_label','doc_url'].forEach(i => document.getElementById(i).value='');
@@ -1755,20 +1842,57 @@ function toggleDashboard() {
   if(dashboardVisible) renderDashboard();
 }
 
-function renderDashboard() {
-  // Project Info
+function setPhase(phase, btn) {
+  projectInfo.phase = phase;
+  save();
+  // Update buttons
+  document.querySelectorAll('.phase-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Re-render project info section only
+  document.getElementById('dashProjectInfo').innerHTML = buildProjectInfoHTML();
+}
+
+function buildProjectInfoHTML() {
   const pi = projectInfo;
-  document.getElementById('dashProjectInfo').innerHTML = `
+  return `
     <div class="dash-info-grid">
-      ${pi.number   ? `<div class="dash-info-item"><div class="dash-info-label">Project No.</div><div class="dash-info-value">${esc(pi.number)}</div></div>` : ''}
-      ${pi.phase    ? `<div class="dash-info-item"><div class="dash-info-label">Phase</div><div class="dash-info-value">${esc(pi.phase)}</div></div>` : ''}
-      ${pi.client   ? `<div class="dash-info-item"><div class="dash-info-label">Client</div><div class="dash-info-value">${esc(pi.client)}</div></div>` : ''}
-      ${pi.status   ? `<div class="dash-info-item"><div class="dash-info-label">Status</div><div class="dash-info-value">${esc(pi.status)}</div></div>` : ''}
-      ${pi.address  ? `<div class="dash-info-item"><div class="dash-info-label">Address</div><div class="dash-info-value">${esc(pi.address)}</div></div>` : ''}
-      ${pi.startDate? `<div class="dash-info-item"><div class="dash-info-label">Start Date</div><div class="dash-info-value">${pi.startDate}</div></div>` : ''}
+      ${pi.number    ? `<div class="dash-info-item"><div class="dash-info-label">Project No.</div><div class="dash-info-value">${esc(pi.number)}</div></div>` : ''}
+      ${pi.phase     ? `<div class="dash-info-item"><div class="dash-info-label">Phase</div><div class="dash-info-value">${esc(pi.phase)}</div></div>` : ''}
+      ${pi.client    ? `<div class="dash-info-item"><div class="dash-info-label">Client</div><div class="dash-info-value">${esc(pi.client)}</div></div>` : ''}
+      ${pi.status    ? `<div class="dash-info-item"><div class="dash-info-label">Status</div><div class="dash-info-value">${esc(pi.status)}</div></div>` : ''}
+      ${pi.address   ? `<div class="dash-info-item"><div class="dash-info-label">Address</div><div class="dash-info-value">${esc(pi.address)}</div></div>` : ''}
+      ${pi.startDate ? `<div class="dash-info-item"><div class="dash-info-label">Start Date</div><div class="dash-info-value">${pi.startDate}</div></div>` : ''}
     </div>
     ${pi.description ? `<div class="dash-description">${esc(pi.description)}</div>` : '<div style="color:var(--text2);font-size:12px;margin-top:8px;">Click Edit to add project details.</div>'}
   `;
+}
+
+function copyMemberInfo(idx, btn) {
+  const m = teamMembers[idx];
+  if(!m) return;
+  const parts = [];
+  if(m.name)    parts.push(m.name);
+  if(m.role)    parts.push(m.role);
+  if(m.company) parts.push(m.company);
+  if(m.email)   parts.push(m.email);
+  if(m.phone)   parts.push(m.phone);
+  navigator.clipboard.writeText(parts.join(' | ')).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function renderDashboard() {
+  // Phase toggle buttons
+  const phase = (projectInfo.phase || '').toUpperCase();
+  document.querySelectorAll('.phase-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent === phase);
+  });
+
+  // Project Info
+  document.getElementById('dashProjectInfo').innerHTML = buildProjectInfoHTML();
 
   // Stats
   const active  = issues.filter(i => i.status !== 'done').length;
@@ -1788,7 +1912,7 @@ function renderDashboard() {
   `;
 
   // Fee
-  const fp = feePlan;
+  const fp = feePlan || { total: 0, phases: [] };
   const total = parseFloat(fp.total) || 0;
   const phases = fp.phases || [];
   const totalBilledPct = phases.reduce((s, p) => s + (parseFloat(p.billed)||0), 0);
@@ -1797,58 +1921,66 @@ function renderDashboard() {
     <div class="fee-total-row">
       <span class="fee-total-num">$${total.toLocaleString()}</span>
       <span class="fee-total-lbl">contract total</span>
-      <span style="margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--blue)">$${totalBilledAmt.toLocaleString(undefined,{maximumFractionDigits:0})} billed (${totalBilledPct}%)</span>
+      <span style="margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--blue)">$${totalBilledAmt.toLocaleString(undefined,{maximumFractionDigits:0})} billed (${totalBilledPct.toFixed(0)}%)</span>
     </div>
     ${phases.map(p => {
-      const allocPct = parseFloat(p.alloc)||0;
-      const billedPct = parseFloat(p.billed)||0;
+      const allocPct = Math.min(parseFloat(p.alloc)||0, 100);
+      const billedPct = Math.min(parseFloat(p.billed)||0, 100);
+      const amt = total * billedPct / 100;
       return `
         <div class="fee-phase-row">
-          <span class="fee-phase-name">${esc(p.name)}</span>
-          <div class="fee-bar-wrap">
-            <div class="fee-bar-fill" style="width:${allocPct}%;opacity:0.3"></div>
-          </div>
-          <div class="fee-bar-wrap" style="position:relative;margin-left:-100%;background:transparent">
-            <div class="fee-bar-fill billed" style="width:${billedPct}%"></div>
-          </div>
-          <span class="fee-phase-pct">${billedPct}%</span>
-          <span class="fee-phase-amt">$${(total*billedPct/100).toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+          <span class="fee-phase-name">${esc(p.name||'')}</span>
+          <div class="fee-bar-wrap"><div class="fee-bar-fill" style="width:${allocPct}%;opacity:0.25;background:var(--text)"></div></div>
+          <div class="fee-bar-wrap"><div class="fee-bar-fill billed" style="width:${billedPct}%"></div></div>
+          <span class="fee-phase-pct">${billedPct.toFixed(0)}%</span>
+          <span class="fee-phase-amt">$${amt.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
         </div>`;
     }).join('')}
     <div style="font-size:10px;color:var(--text2);margin-top:8px;font-family:var(--mono)">Gray = allocated · Blue = billed</div>
   ` : '<div style="color:var(--text2);font-size:12px;">Click Edit to add contract fee details.</div>';
 
+  // Scope
+  document.getElementById('dashScope').innerHTML = renderScope();
+
   // Team
+  const ROLE_TAG = { owner:'team-role-owner', consultant:'team-role-consultant', contractor:'team-role-contractor' };
   const companies = [...new Set(teamMembers.map(m => m.company).filter(Boolean))];
   document.getElementById('dashTeam').innerHTML = teamMembers.length > 0 ? `
     <table class="team-table">
       <thead><tr>
-        <th>Name</th><th>Company</th><th>Role</th><th>Email</th><th>Phone</th><th></th>
+        <th>Name</th><th>Type</th><th>Company</th><th>Role</th><th>Email</th><th>Phone</th><th></th>
       </tr></thead>
       <tbody>
         ${teamMembers.map((m,i) => `
           <tr>
             <td><strong>${esc(m.name)}</strong></td>
-            <td><span class="team-company">${esc(m.company||'')}</span></td>
-            <td>${esc(m.role||'')}</td>
-            <td>${m.email ? `<a href="mailto:${esc(m.email)}">${esc(m.email)}</a>` : '—'}</td>
-            <td>${esc(m.phone||'—')}</td>
-            <td><button class="btn-xs danger" onclick="delMember(${i})">✕</button></td>
+            <td>${m.type ? `<span class="team-role-tag ${ROLE_TAG[m.type]||''}">${esc(m.type)}</span>` : '—'}</td>
+            <td><span class="team-company">${esc(m.company||'—')}</span></td>
+            <td>${esc(m.role||'—')}</td>
+            <td style="font-family:var(--mono);font-size:11px">${esc(m.email||'—')}</td>
+            <td style="font-family:var(--mono);font-size:11px">${esc(m.phone||'—')}</td>
+            <td style="display:flex;gap:4px;padding-top:8px">
+              <button class="team-copy-btn" onclick="copyMemberInfo(${i},this)">Copy</button>
+              <button class="btn-xs danger" onclick="delMember(${i})">✕</button>
+            </td>
           </tr>`).join('')}
       </tbody>
     </table>
-  ` : '<div style="color:var(--text2);font-size:12px;">No team members yet. Click "+ Add Member".</div>';
+  ` : '<div style="color:var(--text2);font-size:12px;">No team members yet.</div>';
 
   // Docs
   document.getElementById('dashDocs').innerHTML = docLinks.length > 0
     ? docLinks.map((d,i) => `
         <div class="doc-item">
-          <a class="doc-link" href="${esc(d.url)}" target="_blank">↗ ${esc(d.label)}</a>
-          <button class="btn-xs danger" onclick="delDoc(${i})">✕</button>
+          <div>
+            <div style="font-size:12px;font-weight:500;margin-bottom:2px">${esc(d.label)}</div>
+            <div class="doc-path">${esc(d.url)}</div>
+          </div>
+          <button class="btn-xs danger" onclick="delDoc(${i})" style="flex-shrink:0">✕</button>
         </div>`).join('')
-    : '<div style="color:var(--text2);font-size:12px;">No links yet. Click "+ Add Link".</div>';
+    : '<div style="color:var(--text2);font-size:12px;">No documents added yet.</div>';
 
-  // Update From/Assigned dropdowns with team data
+  // Update From/Assigned dropdowns
   updatePeopleDropdowns(companies);
 }
 
@@ -1921,10 +2053,12 @@ function saveMember() {
   const name = document.getElementById('mb_name').value.trim();
   if(!name) { alert('Name is required'); return; }
   teamMembers.push({
-    name, company: document.getElementById('mb_company').value.trim(),
-    role: document.getElementById('mb_role').value.trim(),
-    email: document.getElementById('mb_email').value.trim(),
-    phone: document.getElementById('mb_phone').value.trim(),
+    name,
+    type:    document.getElementById('mb_type').value,
+    company: document.getElementById('mb_company').value.trim(),
+    role:    document.getElementById('mb_role').value.trim(),
+    email:   document.getElementById('mb_email').value.trim(),
+    phone:   document.getElementById('mb_phone').value.trim(),
   });
   save(); closeModal('memberModal'); renderDashboard();
 }
@@ -2136,6 +2270,33 @@ function exportICS() {
   URL.revokeObjectURL(a.href);
 }
 
+// Scope
+function saveScope() {
+  scopeText = document.getElementById('scope_text').value;
+  save(); closeModal('scopeModal'); renderDashboard();
+}
+
+function renderScope() {
+  if(!scopeText.trim()) return '<div style="color:var(--text2);font-size:12px;">Click Edit to add project scope.</div>';
+  const lines = scopeText.split('\n');
+  let html = '';
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if(!trimmed) { html += '<div style="height:8px"></div>'; return; }
+    if(trimmed.startsWith('## ')) {
+      html += `<div style="font-weight:600;font-size:13px;margin:8px 0 4px">${esc(trimmed.slice(3))}</div>`;
+    } else if(trimmed.startsWith('- ')) {
+      html += `<div style="display:flex;gap:8px;padding:2px 0;font-size:12px;line-height:1.5">
+        <span style="color:var(--text2);flex-shrink:0">•</span>
+        <span>${esc(trimmed.slice(2))}</span>
+      </div>`;
+    } else {
+      html += `<div style="font-size:12px;padding:2px 0;line-height:1.5">${esc(trimmed)}</div>`;
+    }
+  });
+  return html;
+}
+
 // ── MILESTONES ─────────────────────────────────────────────────────────────
 function saveMilestone() {
   const name = document.getElementById('ms_name').value.trim();
@@ -2174,7 +2335,7 @@ function printReport() {
 
 // ── SAVE DATA ──────────────────────────────────────────────────────────────
 function saveData() {
-  const payload = { project, counter, issues, milestones, projectInfo, teamMembers, docLinks, feePlan };
+  const payload = { project, counter, issues, milestones, projectInfo, teamMembers, docLinks, feePlan, scopeText };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -2207,6 +2368,7 @@ function loadFromFile(input) {
         teamMembers = data.teamMembers || [];
         docLinks    = data.docLinks    || [];
         feePlan     = data.feePlan     || { total: 0, phases: [] };
+        scopeText   = data.scopeText   || '';
         // Persist to localStorage
         localStorage.setItem('dt_issues',      JSON.stringify(issues));
         localStorage.setItem('dt_milestones',  JSON.stringify(milestones));
@@ -2315,11 +2477,14 @@ projectInfo = {};
 teamMembers = [];
 docLinks = [];
 feePlan = { total: 0, phases: [] };
+scopeText = '';
 
 // Load prompt handled by modal above
 unsavedChanges = false;
 resetSaveReminder();
 render();
+// Show dashboard by default
+toggleDashboard();
 </script>
 </body>
 </html>
