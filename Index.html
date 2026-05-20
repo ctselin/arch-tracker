@@ -1,0 +1,2305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decision Tracker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
+
+:root {
+  --bg: #F4F2ED;
+  --surface: #FFFFFF;
+  --surface2: #ECEAE4;
+  --border: #D6D3CC;
+  --text: #1A1916;
+  --text2: #6B6860;
+  --accent: #C84B2F;
+  --green: #2D7A4F;
+  --yellow: #9A7000;
+  --blue: #1E4D9A;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+
+/* ── HEADER ── */
+header {
+  background: var(--text);
+  color: var(--bg);
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; }
+.project-name { font-family: var(--mono); font-size: 11px; color: #888; cursor: pointer; }
+.project-name:hover { color: #bbb; }
+
+/* ── TOOLBAR ── */
+.toolbar {
+  padding: 12px 28px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.btn-primary {
+  background: var(--accent); color: white; border: none;
+  padding: 7px 18px; font-family: var(--sans); font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: background 0.15s; white-space: nowrap;
+}
+.btn-primary:hover { background: #A83820; }
+.btn-ghost {
+  background: transparent; color: var(--text2); border: 1px solid var(--border);
+  padding: 7px 14px; font-family: var(--sans); font-size: 12px;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
+.btn-ghost.archive-toggle { margin-left: 4px; }
+
+.filter-group { display: flex; gap: 3px; margin-left: auto; }
+.filter-btn {
+  padding: 5px 11px; font-family: var(--mono); font-size: 10px;
+  border: 1px solid var(--border); background: transparent;
+  cursor: pointer; letter-spacing: 0.06em; color: var(--text2); transition: all 0.15s;
+}
+.filter-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+/* ── STATS ── */
+.stats-bar {
+  padding: 10px 28px; display: flex; gap: 28px;
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+}
+.stat { display: flex; align-items: baseline; gap: 5px; }
+.stat-num { font-family: var(--mono); font-size: 18px; font-weight: 500; }
+.stat-num.red { color: var(--accent); }
+.stat-num.yellow { color: var(--yellow); }
+.stat-num.green { color: var(--green); }
+.stat-label { font-size: 10px; color: var(--text2); letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* ── ALERT BANNER ── */
+.alert-banner {
+  display: none; padding: 8px 28px;
+  background: #FEF3CD; border-bottom: 1px solid #F0D060;
+  font-size: 12px; color: #7A5800; font-family: var(--mono);
+}
+
+/* ── SECTION HEADER ── */
+.section-header {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text2);
+  padding: 16px 28px 8px; border-bottom: 1px solid var(--border); margin-bottom: 0;
+  background: var(--bg); display: flex; align-items: center; gap: 8px;
+}
+.section-count {
+  background: var(--surface2); color: var(--text2);
+  padding: 1px 7px; font-size: 10px; font-family: var(--mono);
+}
+
+/* ── MAIN ── */
+.main { padding: 0 0 100px; }
+
+/* ── TABLE LAYOUT ── */
+.issue-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.issue-table-header {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr 90px 90px 110px 100px 80px 80px 32px;
+  padding: 7px 28px;
+  background: var(--surface2);
+  border-bottom: 2px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.issue-table-header .col-head {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text2); font-weight: 500;
+}
+
+/* ── ISSUE ROW ── */
+.issue-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr 90px 90px 110px 100px 80px 80px 32px;
+  padding: 10px 28px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.1s;
+  align-items: start;
+}
+.issue-row:hover { background: #FAFAF8; }
+.issue-row.is-done { opacity: 1; }
+.issue-row.expanded { background: #F8F6F0; border-bottom: none; }
+
+.issue-card {
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 0;
+}
+.issue-card.is-done { opacity: 1; }
+
+.col { font-size: 12px; padding-right: 12px; min-width: 0; }
+.col-received { font-family: var(--mono); font-size: 11px; color: var(--text2); }
+.col-comment { font-weight: 500; line-height: 1.4; }
+.col-action { color: var(--blue); font-style: italic; line-height: 1.4; }
+.col-source {}
+.col-from { font-size: 11px; color: var(--text2); }
+.col-status {}
+.col-assigned { font-size: 11px; color: var(--text2); }
+.col-chase { font-family: var(--mono); font-size: 11px; }
+.col-chase.overdue { color: var(--accent); font-weight: 600; }
+.col-format { font-size: 11px; color: var(--text2); }
+.col-expand { display: flex; align-items: flex-start; justify-content: center; padding-right: 0; }
+
+.expand-icon { color: var(--text2); font-size: 11px; transition: transform 0.2s; margin-top: 2px; flex-shrink: 0; }
+.issue-card.expanded .expand-icon { transform: rotate(90deg); }
+
+/* ── ISSUE BODY (expanded detail) ── */
+.issue-body {
+  display: none;
+  border-top: 1px solid var(--surface2);
+  padding: 14px 28px 16px;
+  background: #F8F6F0;
+}
+.issue-card.expanded .issue-body { display: block; }
+
+.detail-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px; margin-bottom: 14px;
+}
+.detail-item {}
+.detail-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text2); margin-bottom: 2px; }
+.detail-value { font-size: 12px; color: var(--text); }
+
+.context-block {
+  background: var(--surface); border-left: 3px solid var(--border);
+  padding: 8px 12px; margin-bottom: 14px;
+  font-size: 12px; color: var(--text2); line-height: 1.6; font-style: italic;
+}
+
+/* ── SUBTASKS ── */
+.subtasks-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text2); margin-bottom: 6px;
+}
+.subtask {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 10px; margin-bottom: 5px;
+  background: var(--bg); border-left: 3px solid var(--border);
+}
+.subtask.waiting  { border-left-color: #E0B800; }
+.subtask.action   { border-left-color: var(--blue); }
+.subtask.blocked  { border-left-color: var(--accent); }
+.subtask.done     { border-left-color: var(--green); opacity: 0.55; }
+
+.subtask-content { flex: 1; min-width: 0; }
+.subtask-title { font-size: 12px; font-weight: 500; }
+.subtask-note  { font-size: 11px; color: var(--text2); margin-top: 1px; }
+.subtask-meta  { display: flex; gap: 6px; align-items: center; margin-top: 3px; flex-wrap: wrap; }
+.subtask-meta .meta-text { font-size: 10px; }
+
+.subtask-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+.btn-xs {
+  padding: 2px 8px; font-size: 10px; font-family: var(--mono);
+  border: 1px solid var(--border); background: transparent;
+  cursor: pointer; color: var(--text2); transition: all 0.12s; white-space: nowrap;
+}
+.btn-xs:hover { background: var(--surface2); color: var(--text); }
+.btn-xs.danger:hover { background: #FEF2F2; color: var(--accent); border-color: #FECACA; }
+
+.add-subtask-btn {
+  width: 100%; padding: 6px 10px; margin-top: 6px;
+  background: transparent; border: 1px dashed var(--border);
+  font-family: var(--sans); font-size: 11px; color: var(--text2);
+  cursor: pointer; text-align: left; transition: all 0.15s;
+}
+.add-subtask-btn:hover { border-color: var(--text2); color: var(--text); }
+
+.card-actions {
+  display: flex; gap: 6px; margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.btn-sm {
+  padding: 4px 12px; font-size: 11px; font-family: var(--sans);
+  border: 1px solid var(--border); background: transparent;
+  cursor: pointer; color: var(--text2); transition: all 0.15s;
+}
+.btn-sm:hover { background: var(--surface2); color: var(--text); }
+.btn-sm.danger:hover { background: #FEF2F2; color: var(--accent); border-color: #FECACA; }
+.btn-sm.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn-sm.primary:hover { background: #444; }
+
+/* archive section header */
+.section-header {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text2);
+  padding: 12px 28px 8px; border-bottom: 1px solid var(--border);
+  background: var(--bg); display: flex; align-items: center; gap: 8px;
+}
+.section-count {
+  background: var(--surface2); color: var(--text2);
+  padding: 1px 7px; font-size: 10px; font-family: var(--mono);
+}
+
+/* ── SCHEDULE VIEW ── */
+.schedule-timeline {
+  position: relative;
+  padding-left: 24px;
+  border-left: 2px solid var(--border);
+}
+.schedule-item {
+  position: relative;
+  margin-bottom: 16px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+.schedule-item::before {
+  content: '';
+  position: absolute;
+  left: -31px;
+  top: 18px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  border: 2px solid var(--bg);
+}
+.schedule-item.soon::before  { background: var(--yellow); }
+.schedule-item.overdue::before { background: var(--accent); }
+.schedule-item.future::before  { background: var(--blue); }
+.schedule-item.done-ms::before { background: var(--green); }
+
+.schedule-date-block {
+  min-width: 90px;
+  text-align: center;
+}
+.schedule-date-day {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text);
+}
+.schedule-date-monthyear {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text2);
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+.schedule-date-weekday {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 4px;
+  letter-spacing: 0.06em;
+}
+.schedule-date-weekday.soon    { color: var(--yellow); }
+.schedule-date-weekday.overdue { color: var(--accent); }
+.schedule-date-weekday.future  { color: var(--blue); }
+.schedule-date-weekday.done-ms { color: var(--green); }
+
+.schedule-info { flex: 1; }
+.schedule-name {
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.schedule-countdown {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+}
+.schedule-countdown.soon    { color: var(--yellow); font-weight: 500; }
+.schedule-countdown.overdue { color: var(--accent); font-weight: 500; }
+.schedule-countdown.done-ms { color: var(--green); }
+
+.schedule-item-actions {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.schedule-today-marker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  position: relative;
+  left: -28px;
+}
+.schedule-today-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 2px var(--text);
+  flex-shrink: 0;
+}
+.schedule-today-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* ── MILESTONE BAR ── */
+.milestone-bar {
+  padding: 10px 28px; display: flex; gap: 8px; align-items: center;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.milestone-bar-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text2); margin-right: 4px; white-space: nowrap;
+}
+.milestone-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border: 1px solid var(--border);
+  font-family: var(--mono); font-size: 11px; background: var(--bg);
+  cursor: default; transition: all 0.15s;
+}
+.milestone-chip.soon  { background: #FEF9E7; border-color: #E0C040; color: #7A5800; }
+.milestone-chip.overdue { background: #FEF2F2; border-color: #FECACA; color: #991B1B; }
+.milestone-chip-date { font-size: 10px; opacity: 0.7; }
+.milestone-chip-del {
+  background: none; border: none; cursor: pointer; color: var(--text2);
+  font-size: 12px; padding: 0 0 0 4px; line-height: 1;
+  opacity: 0; transition: opacity 0.15s;
+}
+.milestone-chip:hover .milestone-chip-del { opacity: 1; }
+.milestone-add-btn {
+  background: transparent; border: 1px dashed var(--border);
+  padding: 4px 10px; font-family: var(--mono); font-size: 10px;
+  color: var(--text2); cursor: pointer; letter-spacing: 0.06em;
+  transition: all 0.15s; white-space: nowrap;
+}
+.milestone-add-btn:hover { border-color: var(--text); color: var(--text); }
+
+/* ── PRINT MILESTONE ── */
+.print-milestones {
+  display: none;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #ccc;
+}
+.print-milestones-title {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: #666; margin-bottom: 6px;
+}
+.print-milestone-row {
+  display: flex; gap: 24px; flex-wrap: wrap;
+}
+.print-milestone-item {
+  font-size: 11px; font-family: var(--mono);
+}
+
+/* ── EMPTY STATE ── */
+.empty-state { text-align: center; padding: 60px 32px; color: var(--text2); }
+.empty-state h3 { font-size: 14px; font-weight: 500; margin-bottom: 6px; color: var(--text); }
+.empty-state p { font-size: 12px; line-height: 1.6; }
+
+/* ── EXPORT FAB ── */
+.fab-group {
+  position: fixed; bottom: 24px; right: 28px;
+  display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+}
+.fab {
+  border: none; padding: 10px 18px; font-family: var(--mono);
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.15s; box-shadow: 0 3px 12px rgba(0,0,0,0.18);
+  white-space: nowrap;
+}
+.fab-csv { background: var(--text); color: var(--bg); }
+.fab-csv:hover { background: #444; }
+.fab-print { background: var(--accent); color: white; }
+.fab-print:hover { background: #A83820; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(26,25,22,0.55); z-index: 200; backdrop-filter: blur(2px);
+  align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface); width: 580px; max-width: 96vw;
+  max-height: 92vh; overflow-y: auto; padding: 28px; position: relative;
+}
+.modal-title {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text2); margin-bottom: 22px;
+}
+.modal-close {
+  position: absolute; top: 14px; right: 16px;
+  background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text2);
+}
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block; font-family: var(--mono); font-size: 9px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text2); margin-bottom: 5px;
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+  background: var(--bg); font-family: var(--sans); font-size: 13px;
+  color: var(--text); outline: none; transition: border-color 0.15s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--text); }
+.form-textarea { resize: vertical; min-height: 68px; line-height: 1.6; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.modal-footer {
+  display: flex; justify-content: flex-end; gap: 8px;
+  margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);
+}
+
+/* ── CHASE BAR ── */
+.chase-bar {
+  padding: 8px 28px; display: flex; gap: 8px; align-items: center;
+  background: #FEF2F2; border-bottom: 1px solid #FECACA;
+  flex-wrap: wrap;
+}
+.chase-bar-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: #991B1B; margin-right: 4px;
+  white-space: nowrap; font-weight: 600;
+}
+.chase-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 10px; font-family: var(--mono); font-size: 11px;
+  cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
+  border: 1px solid transparent;
+}
+.chase-chip:hover { opacity: 0.75; }
+.chase-chip.overdue {
+  background: #FEF2F2; border-color: #FECACA; color: #991B1B;
+}
+.chase-chip.soon {
+  background: #FEF9E7; border-color: #F0D060; color: #7A5800;
+}
+.chase-chip-label { font-size: 10px; opacity: 0.7; }
+
+/* ── SORT DROPDOWN ── */
+.sort-dropdown-wrap {
+  position: relative;
+  margin-left: auto;
+}
+.sort-dropdown-btn {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 6px 12px; font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.06em; cursor: pointer; color: var(--text);
+  white-space: nowrap; transition: all 0.15s;
+}
+.sort-dropdown-btn:hover { background: var(--surface2); }
+.sort-menu {
+  display: none; position: absolute; right: 0; top: calc(100% + 4px);
+  background: var(--surface); border: 1px solid var(--border);
+  min-width: 180px; z-index: 150;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+.sort-menu.open { display: block; }
+.sort-menu-section {
+  padding: 8px 14px 4px; font-family: var(--mono); font-size: 9px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text2);
+}
+.sort-menu-item {
+  padding: 7px 14px; font-size: 12px; cursor: pointer;
+  color: var(--text); transition: background 0.1s;
+}
+.sort-menu-item:hover { background: var(--surface2); }
+.sort-menu-item.active { font-weight: 500; }
+.sort-menu-divider { border-top: 1px solid var(--border); margin: 4px 0; }
+
+/* ── DASHBOARD ── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.dash-wide { grid-column: 1 / -1; }
+.dash-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 20px;
+}
+.dash-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.dash-card-title {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text2); font-weight: 500;
+}
+.dash-info-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+.dash-info-item {}
+.dash-info-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text2); margin-bottom: 2px;
+}
+.dash-info-value { font-size: 13px; color: var(--text); font-weight: 500; }
+.dash-description {
+  font-size: 12px; color: var(--text2); line-height: 1.6;
+  margin-top: 12px; font-style: italic;
+}
+.dash-stat-row {
+  display: flex; gap: 20px; flex-wrap: wrap;
+}
+.dash-stat-item { text-align: center; }
+.dash-stat-num {
+  font-family: var(--mono); font-size: 28px; font-weight: 500;
+  line-height: 1;
+}
+.dash-stat-lbl {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text2); margin-top: 4px;
+}
+
+/* Fee */
+.fee-total-row {
+  display: flex; align-items: baseline; gap: 8px; margin-bottom: 16px;
+}
+.fee-total-num {
+  font-family: var(--mono); font-size: 22px; font-weight: 500; color: var(--text);
+}
+.fee-total-lbl { font-size: 11px; color: var(--text2); }
+.fee-phase-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.fee-phase-name { font-size: 12px; font-weight: 500; min-width: 60px; }
+.fee-bar-wrap {
+  flex: 1; height: 8px; background: var(--surface2); border-radius: 0;
+  overflow: hidden;
+}
+.fee-bar-fill { height: 100%; background: var(--green); transition: width 0.3s; }
+.fee-bar-fill.billed { background: var(--blue); }
+.fee-phase-pct {
+  font-family: var(--mono); font-size: 11px; color: var(--text2); min-width: 40px; text-align: right;
+}
+.fee-phase-amt {
+  font-family: var(--mono); font-size: 11px; color: var(--text2); min-width: 80px; text-align: right;
+}
+.fee-phase-edit-row {
+  display: grid; grid-template-columns: 1fr 80px 80px auto; gap: 8px;
+  align-items: center; margin-bottom: 8px;
+}
+
+/* Team */
+.team-table { width: 100%; border-collapse: collapse; }
+.team-table th {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text2); padding: 4px 10px 8px 0;
+  text-align: left; border-bottom: 1px solid var(--border);
+}
+.team-table td {
+  padding: 10px 10px 10px 0; font-size: 12px;
+  border-bottom: 1px solid var(--surface2); vertical-align: top;
+}
+.team-table td a { color: var(--blue); text-decoration: none; }
+.team-table td a:hover { text-decoration: underline; }
+.team-company { font-size: 10px; color: var(--text2); margin-top: 2px; font-family: var(--mono); }
+
+/* Docs */
+.doc-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0; border-bottom: 1px solid var(--surface2);
+}
+.doc-item:last-child { border-bottom: none; }
+.doc-link { font-size: 13px; color: var(--blue); text-decoration: none; font-weight: 500; }
+.doc-link:hover { text-decoration: underline; }
+
+/* ── PRINT STYLES ── */
+@media print {
+  header, .toolbar, .stats-bar, .alert-banner, .fab-group,
+  .card-actions, .add-subtask-btn, .expand-icon,
+  .btn-xs, .section-header, .col-expand { display: none !important; }
+
+  body { background: white; font-size: 11px; color: black; }
+
+  .print-only { display: block !important; }
+
+  .issue-table-header { position: static !important; background: #eee !important; }
+  .issue-row { grid-template-columns: 80px 1fr 1fr 80px 80px 90px 90px 70px 70px !important; }
+  .issue-table-header { grid-template-columns: 80px 1fr 1fr 80px 80px 90px 90px 70px 70px 0px !important; }
+
+  .issue-card.is-done { display: none !important; }
+  .issue-body { display: block !important; padding: 8px 28px !important; background: #f9f9f9 !important; }
+
+  .subtask.done { display: none !important; }
+
+  .main { padding: 0 !important; }
+
+  @page { margin: 1.5cm; }
+}
+
+.print-only {
+  display: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+  padding: 12px 28px 4px;
+  letter-spacing: 0.06em;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Decision Tracker</h1>
+  <span class="project-name" onclick="openProjectModal()" id="projectNameDisplay" title="Click to edit">—</span>
+</header>
+
+<div class="toolbar">
+  <button class="btn-primary" id="newEntryBtn" onclick="openNewModal()">＋ New Entry</button>
+  <button class="btn-ghost" onclick="toggleArchive()" id="archiveBtn">Show Archive</button>
+  <button class="btn-ghost" id="dashboardBtn" onclick="toggleDashboard()" style="border-color:#2D7A4F;color:#2D7A4F">⊞ Dashboard</button>
+  <button class="btn-ghost" id="scheduleBtn" onclick="toggleScheduleView()" style="border-color:var(--blue);color:var(--blue)">📅 Schedule</button>
+  <div class="filter-group" id="filterGroup">
+    <button class="filter-btn active" onclick="setFilter('active',this)">Active</button>
+    <button class="filter-btn" onclick="setFilter('waiting',this)">Waiting</button>
+    <button class="filter-btn" onclick="setFilter('action',this)">Action Req.</button>
+    <button class="filter-btn" onclick="setFilter('blocked',this)">Blocked</button>
+  </div>
+  <div class="sort-dropdown-wrap" id="sortWrap">
+    <button class="sort-dropdown-btn" onclick="toggleSortMenu()" id="sortBtn">
+      <span id="sortLabel">By Received Date</span> ▾
+    </button>
+    <div class="sort-menu" id="sortMenu">
+      <div class="sort-menu-section">Arrange by</div>
+      <div class="sort-menu-item" data-arrange="received" onclick="setArrange('received',this)">✓ Received Date</div>
+      <div class="sort-menu-item" data-arrange="created" onclick="setArrange('created',this)">Created Date</div>
+      <div class="sort-menu-item" data-arrange="source" onclick="setArrange('source',this)">Source</div>
+      <div class="sort-menu-item" data-arrange="status" onclick="setArrange('status',this)">Status</div>
+      <div class="sort-menu-item" data-arrange="assigned" onclick="setArrange('assigned',this)">Assigned To</div>
+      <div class="sort-menu-divider"></div>
+      <div class="sort-menu-section">Sort</div>
+      <div class="sort-menu-item" data-sort="asc" onclick="setSortDir('asc',this)">Oldest on Top</div>
+      <div class="sort-menu-item" data-sort="desc" onclick="setSortDir('desc',this)">✓ Newest on Top</div>
+    </div>
+  </div>
+</div>
+
+<div class="stats-bar" id="statsBar"></div>
+<div class="milestone-bar" id="milestoneBar"></div>
+<div class="alert-banner" id="alertBanner"></div>
+<div class="chase-bar" id="chaseBar" style="display:none"></div>
+
+<div class="print-only" id="printHeader"></div>
+<div class="print-milestones" id="printMilestones">
+  <div class="print-milestones-title">Project Milestones</div>
+  <div class="print-milestone-row" id="printMilestoneRow"></div>
+</div>
+
+<!-- SCHEDULE VIEW -->
+<div id="scheduleView" style="display:none; padding:24px 28px 100px;">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <div style="font-family:var(--mono); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text2);">Project Schedule</div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn-ghost" onclick="copyMilestones()" style="border-color:var(--green);color:var(--green)">⎘ Copy Milestones</button>
+      <button class="btn-ghost" onclick="exportICS()" style="border-color:var(--blue);color:var(--blue)">↓ Export to Calendar (.ics)</button>
+      <button class="btn-primary" onclick="openModal('milestoneModal')">＋ Add Milestone</button>
+    </div>
+  </div>
+  <div id="scheduleContent"></div>
+</div>
+
+<!-- DASHBOARD VIEW -->
+<div id="dashboardView" style="display:none; padding:24px 28px 100px;">
+  <div class="dash-grid">
+
+    <!-- Project Info -->
+    <div class="dash-card dash-wide">
+      <div class="dash-card-header">
+        <span class="dash-card-title">Project Info</span>
+        <button class="btn-sm" onclick="openModal('projectInfoModal')">Edit</button>
+      </div>
+      <div id="dashProjectInfo"></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="dash-card">
+      <div class="dash-card-header"><span class="dash-card-title">Status Overview</span></div>
+      <div id="dashStats"></div>
+    </div>
+
+    <!-- Design Fee -->
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <span class="dash-card-title">Design Fee</span>
+        <button class="btn-sm" onclick="openModal('feeModal')">Edit</button>
+      </div>
+      <div id="dashFee"></div>
+    </div>
+
+    <!-- Team -->
+    <div class="dash-card dash-wide">
+      <div class="dash-card-header">
+        <span class="dash-card-title">Team</span>
+        <button class="btn-sm btn-primary" onclick="openModal('memberModal')">＋ Add Member</button>
+      </div>
+      <div id="dashTeam"></div>
+    </div>
+
+    <!-- Documents -->
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <span class="dash-card-title">Key Documents</span>
+        <button class="btn-sm btn-primary" onclick="openModal('docModal')">＋ Add Link</button>
+      </div>
+      <div id="dashDocs"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="main" id="mainContent">
+  <div class="issue-table-header" id="tableHeader">
+    <div class="col-head">Received</div>
+    <div class="col-head">Original Comment</div>
+    <div class="col-head">Action Required</div>
+    <div class="col-head">Source</div>
+    <div class="col-head">From</div>
+    <div class="col-head">Status</div>
+    <div class="col-head">Assigned To</div>
+    <div class="col-head">Chase</div>
+    <div class="col-head">Format</div>
+    <div class="col-head"></div>
+  </div>
+  <div id="tableBody"></div>
+</div>
+
+<input type="file" id="loadFileInput" accept=".json,.decisiontracker,application/json" style="display:none" onchange="loadFromFile(this)">
+
+<div class="fab-group">
+  <button class="fab fab-print" onclick="printReport()">⎙ Print Report</button>
+  <button class="fab fab-csv" onclick="saveData()">↓ Save Data</button>
+  <button class="fab" style="background:var(--surface);color:var(--text);border:1px solid var(--border);box-shadow:0 3px 12px rgba(0,0,0,0.18)" onclick="document.getElementById('loadFileInput').click()">↑ Load Data</button>
+</div>
+
+<!-- ═══ NEW ENTRY MODAL ═══ -->
+<div class="modal-overlay" id="newModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('newModal')">✕</button>
+    <div class="modal-title">New Decision Entry</div>
+
+    <div class="form-group">
+      <label class="form-label">Original Comment *</label>
+      <textarea class="form-textarea" id="f_comment" placeholder="What the owner / consultant said or requested" style="min-height:56px"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Action Required</label>
+      <textarea class="form-textarea" id="f_action" placeholder="What we need to do in response" style="min-height:56px"></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Source Type</label>
+        <select class="form-select" id="f_sourceType">
+          <option value="owner">Owner</option>
+          <option value="consultant">Consultant</option>
+          <option value="internal">Internal</option>
+          <option value="contractor">Contractor</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">From (Name)</label>
+        <select class="form-select" id="f_from"></select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Assigned To</label>
+        <select class="form-select" id="f_assigned"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Received Date</label>
+        <input class="form-input" type="date" id="f_received">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Format</label>
+        <select class="form-select" id="f_format" onchange="toggleOther('f_formatOther', this)">
+          <option value="">—</option>
+          <option value="Email">Email</option>
+          <option value="Meeting">Meeting</option>
+          <option value="Phone">Phone</option>
+          <option value="Redline">Redline</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group" id="f_formatOther" style="display:none">
+        <label class="form-label">Format Detail</label>
+        <input class="form-input" id="f_formatDetail" placeholder="e.g. Site Visit, Teams Call">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-select" id="f_status">
+          <option value="waiting">Waiting for Reply</option>
+          <option value="action">Action Required</option>
+          <option value="blocked">Blocked / On Hold</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Follow-up Date</label>
+        <input class="form-input" type="date" id="f_followup">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Blocked Reason</label>
+      <input class="form-input" id="f_blocked" placeholder="e.g. Drawings already sent to contractor, pending next revision">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Context / Background</label>
+      <textarea class="form-textarea" id="f_context" placeholder="Background so anyone reading this 2 months later understands the full picture"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('newModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveNew()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EDIT MODAL ═══ -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('editModal')">✕</button>
+    <div class="modal-title">Edit Entry</div>
+
+    <div class="form-group">
+      <label class="form-label">Original Comment *</label>
+      <textarea class="form-textarea" id="e_comment" style="min-height:56px"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Action Required</label>
+      <textarea class="form-textarea" id="e_action" style="min-height:56px"></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Source Type</label>
+        <select class="form-select" id="e_sourceType">
+          <option value="owner">Owner</option>
+          <option value="consultant">Consultant</option>
+          <option value="internal">Internal</option>
+          <option value="contractor">Contractor</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">From (Name)</label>
+        <select class="form-select" id="e_from"></select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Assigned To</label>
+        <select class="form-select" id="e_assigned"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Received Date</label>
+        <input class="form-input" type="date" id="e_received">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Format</label>
+        <select class="form-select" id="e_format" onchange="toggleOther('e_formatOther', this)">
+          <option value="">—</option>
+          <option value="Email">Email</option>
+          <option value="Meeting">Meeting</option>
+          <option value="Phone">Phone</option>
+          <option value="Redline">Redline</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group" id="e_formatOther" style="display:none">
+        <label class="form-label">Format Detail</label>
+        <input class="form-input" id="e_formatDetail" placeholder="e.g. Site Visit, Teams Call">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-select" id="e_status">
+          <option value="waiting">Waiting for Reply</option>
+          <option value="action">Action Required</option>
+          <option value="blocked">Blocked / On Hold</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Follow-up Date</label>
+        <input class="form-input" type="date" id="e_followup">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Blocked Reason</label>
+      <input class="form-input" id="e_blocked">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Context / Background</label>
+      <textarea class="form-textarea" id="e_context"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('editModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveEdit()">Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SUBTASK MODAL ═══ -->
+<div class="modal-overlay" id="subtaskModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('subtaskModal')">✕</button>
+    <div class="modal-title">Add Follow-up Task</div>
+
+    <div class="form-group">
+      <label class="form-label">Task Description *</label>
+      <input class="form-input" id="st_title" placeholder="e.g. Notify landscape consultant re: tree replacement options">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Assigned To</label>
+        <input class="form-input" id="st_assigned" placeholder="Name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-select" id="st_status">
+          <option value="waiting">Waiting for Reply</option>
+          <option value="action">Action Required</option>
+          <option value="blocked">Blocked</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Follow-up Date (chase if no reply by)</label>
+      <input class="form-input" type="date" id="st_followup">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Note</label>
+      <input class="form-input" id="st_note" placeholder="Additional context">
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('subtaskModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveSubtask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PROJECT MODAL ═══ -->
+<div class="modal-overlay" id="projectModal">
+  <div class="modal" style="width:400px">
+    <button class="modal-close" onclick="closeModal('projectModal')">✕</button>
+    <div class="modal-title">Project Settings</div>
+    <div class="form-group">
+      <label class="form-label">Project Name</label>
+      <input class="form-input" id="proj_name" placeholder="e.g. Fairbanks Office Building — DD Phase">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('projectModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveProject()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MILESTONE MODAL ═══ -->
+<div class="modal-overlay" id="milestoneModal">
+  <div class="modal" style="width:400px">
+    <button class="modal-close" onclick="closeModal('milestoneModal')">✕</button>
+    <div class="modal-title">Add Milestone</div>
+    <div class="form-group">
+      <label class="form-label">Milestone Name *</label>
+      <input class="form-input" id="ms_name" placeholder="e.g. DD Meeting, VE Meeting, Final Submission">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date *</label>
+      <input class="form-input" type="date" id="ms_date">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('milestoneModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveMilestone()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PROJECT INFO MODAL ═══ -->
+<div class="modal-overlay" id="projectInfoModal">
+  <div class="modal" style="width:520px">
+    <button class="modal-close" onclick="closeModal('projectInfoModal')">✕</button>
+    <div class="modal-title">Project Info</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Project Number</label>
+        <input class="form-input" id="pi_number" placeholder="e.g. 24-171">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Current Phase</label>
+        <select class="form-select" id="pi_phase">
+          <option value="">—</option>
+          <option value="SD">SD</option>
+          <option value="DD">DD</option>
+          <option value="CD">CD</option>
+          <option value="CA">CA</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Client / Owner</label>
+      <input class="form-input" id="pi_client" placeholder="e.g. HAP Alaska">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Project Address</label>
+      <input class="form-input" id="pi_address" placeholder="e.g. 123 Main St, Fairbanks, AK">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Contract Start Date</label>
+        <input class="form-input" type="date" id="pi_startDate">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Project Status</label>
+        <select class="form-select" id="pi_status">
+          <option value="Active">Active</option>
+          <option value="On Hold">On Hold</option>
+          <option value="Complete">Complete</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea class="form-textarea" id="pi_description" placeholder="Brief project description for new team members"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('projectInfoModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveProjectInfo()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DESIGN FEE MODAL ═══ -->
+<div class="modal-overlay" id="feeModal">
+  <div class="modal" style="width:480px">
+    <button class="modal-close" onclick="closeModal('feeModal')">✕</button>
+    <div class="modal-title">Design Fee</div>
+    <div class="form-group">
+      <label class="form-label">Total Contract Fee ($)</label>
+      <input class="form-input" id="fee_total" type="number" placeholder="e.g. 250000">
+    </div>
+    <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);margin-bottom:8px;">Billing by Phase</div>
+    <div id="feePhaseList"></div>
+    <button class="add-subtask-btn" onclick="addFeePhaseRow()">＋ Add Phase</button>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('feeModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveFeePlan()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TEAM MEMBER MODAL ═══ -->
+<div class="modal-overlay" id="memberModal">
+  <div class="modal" style="width:480px">
+    <button class="modal-close" onclick="closeModal('memberModal')">✕</button>
+    <div class="modal-title">Add Team Member</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Name *</label>
+        <input class="form-input" id="mb_name" placeholder="First Last">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Company</label>
+        <input class="form-input" id="mb_company" placeholder="e.g. BNAP, GBA">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Role</label>
+      <input class="form-input" id="mb_role" placeholder="e.g. Project Architect, Structural Engineer">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="mb_email" type="email" placeholder="name@company.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input class="form-input" id="mb_phone" placeholder="(907) 555-0100">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('memberModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveMember()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DOCUMENT LINK MODAL ═══ -->
+<div class="modal-overlay" id="docModal">
+  <div class="modal" style="width:440px">
+    <button class="modal-close" onclick="closeModal('docModal')">✕</button>
+    <div class="modal-title">Add Document Link</div>
+    <div class="form-group">
+      <label class="form-label">Label *</label>
+      <input class="form-input" id="doc_label" placeholder="e.g. Drawing Set, Contract, Spec Book">
+    </div>
+    <div class="form-group">
+      <label class="form-label">URL *</label>
+      <input class="form-input" id="doc_url" placeholder="https://...">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('docModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveDoc()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOAD PROMPT MODAL ═══ -->
+<div class="modal-overlay open" id="loadPromptModal">
+  <div class="modal" style="width:380px; text-align:center;">
+    <div class="modal-title" style="text-align:left;">Decision Tracker</div>
+    <p style="font-size:14px; margin-bottom:8px; font-weight:500;">Load existing data file?</p>
+    <p style="font-size:12px; color:var(--text2); margin-bottom:24px;">Click Load to select your saved file, or Start Fresh to begin with an empty project.</p>
+    <div style="display:flex; gap:10px; justify-content:center;">
+      <button class="btn-primary" onclick="triggerLoadFile()">↑ Load File</button>
+      <button class="btn-ghost" onclick="closeModal('loadPromptModal')">Start Fresh</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+let issues     = JSON.parse(localStorage.getItem('dt_issues')      || '[]');
+let milestones = JSON.parse(localStorage.getItem('dt_milestones')  || '[]');
+let project    = localStorage.getItem('dt_project') || 'Untitled Project';
+let counter    = parseInt(localStorage.getItem('dt_counter')       || '0');
+let projectInfo = JSON.parse(localStorage.getItem('dt_projectInfo') || '{}');
+let teamMembers = JSON.parse(localStorage.getItem('dt_team')        || '[]');
+let docLinks    = JSON.parse(localStorage.getItem('dt_docs')        || '[]');
+let feePlan     = JSON.parse(localStorage.getItem('dt_fee')         || '{"total":0,"phases":[]}');
+let filter     = 'active';
+let showArchive = false;
+let dashboardVisible = false;
+let editingId = null;
+let subtaskTargetId = null;
+let arrangeBy  = 'received';
+let sortDir    = 'desc';
+let unsavedChanges = false;
+let saveReminderTimer = null;
+
+function markUnsaved() {
+  unsavedChanges = true;
+  clearTimeout(saveReminderTimer);
+  saveReminderTimer = setTimeout(() => { if(unsavedChanges) showSaveBanner(); }, 15 * 60 * 1000);
+}
+
+function resetSaveReminder() {
+  clearTimeout(saveReminderTimer);
+  saveReminderTimer = setTimeout(() => { if(unsavedChanges) showSaveBanner(); }, 15 * 60 * 1000);
+}
+
+function save() {
+  localStorage.setItem('dt_issues',      JSON.stringify(issues));
+  localStorage.setItem('dt_milestones',  JSON.stringify(milestones));
+  localStorage.setItem('dt_project',     project);
+  localStorage.setItem('dt_counter',     counter);
+  localStorage.setItem('dt_projectInfo', JSON.stringify(projectInfo));
+  localStorage.setItem('dt_team',        JSON.stringify(teamMembers));
+  localStorage.setItem('dt_docs',        JSON.stringify(docLinks));
+  localStorage.setItem('dt_fee',         JSON.stringify(feePlan));
+  markUnsaved();
+}
+function genId() { counter++; return 'D-' + String(counter).padStart(3,'0'); }
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function fmtDate(d) { if(!d) return ''; const [y,m,day]=d.split('-'); return `${m}/${day}`; }
+function isOverdue(d) { return d && d < todayStr(); }
+function isMilestoneSoon(d) { if(!d) return false; const diff=(new Date(d)-new Date())/86400000; return diff>=0&&diff<=7; }
+
+const SRC_LABEL  = { owner:'Owner', consultant:'Consultant', internal:'Internal', contractor:'Contractor' };
+const SRC_TAG    = { owner:'tag-owner', consultant:'tag-consultant', internal:'tag-internal', contractor:'tag-contractor' };
+const STAT_LABEL = { waiting:'Waiting', action:'Action Req.', blocked:'Blocked', done:'Done' };
+const STAT_TAG   = { waiting:'tag-waiting', action:'tag-action', blocked:'tag-blocked', done:'tag-done' };
+
+function esc(s) {
+  if(!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────────
+function render() {
+  document.getElementById('projectNameDisplay').textContent = project;
+  document.getElementById('printHeader').textContent =
+    `${project}  ·  Printed ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}  ·  Active items only`;
+
+  // Stats
+  const active = issues.filter(i => i.status !== 'done');
+  const waiting = active.filter(i => i.status === 'waiting').length;
+  const action  = active.filter(i => i.status === 'action').length;
+  const blocked = active.filter(i => i.status === 'blocked').length;
+  const done    = issues.filter(i => i.status === 'done').length;
+
+  let overdue = 0;
+  issues.forEach(i => {
+    if(i.status !== 'done' && isOverdue(i.followup)) overdue++;
+    (i.subtasks||[]).forEach(s => { if(s.status!=='done' && isOverdue(s.followup)) overdue++; });
+  });
+
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat"><span class="stat-num">${active.length}</span><span class="stat-label">Active</span></div>
+    <div class="stat"><span class="stat-num yellow">${waiting}</span><span class="stat-label">Waiting</span></div>
+    <div class="stat"><span class="stat-num" style="color:var(--blue)">${action}</span><span class="stat-label">Action Req.</span></div>
+    <div class="stat"><span class="stat-num red">${blocked}</span><span class="stat-label">Blocked</span></div>
+    <div class="stat"><span class="stat-num red">${overdue}</span><span class="stat-label">Overdue</span></div>
+    <div class="stat"><span class="stat-num green">${done}</span><span class="stat-label">Archived</span></div>
+  `;
+
+  // Milestones bar
+  const sorted = [...milestones].sort((a,b) => a.date.localeCompare(b.date));
+  document.getElementById('milestoneBar').innerHTML =
+    `<span class="milestone-bar-label">Milestones</span>` +
+    sorted.map(m => {
+      const cls = isOverdue(m.date) ? 'overdue' : isMilestoneSoon(m.date) ? 'soon' : '';
+      const wd = weekday(m.date);
+      return `<div class="milestone-chip ${cls}">
+        <span>${esc(m.name)}</span>
+        <span class="milestone-chip-date">${fmtDate(m.date)} ${wd}</span>
+        <button class="milestone-chip-del" onclick="delMilestone('${m.id}')" title="Remove">✕</button>
+      </div>`;
+    }).join('') +
+    `<button class="milestone-add-btn" onclick="openModal('milestoneModal')">＋ Add</button>`;
+
+  // Print milestones
+  document.getElementById('printMilestoneRow').innerHTML = sorted.map(m =>
+    `<div class="print-milestone-item">${esc(m.name)}: ${m.date}</div>`
+  ).join('');
+
+  // Chase bar — items with overdue or ≤3 day follow-ups
+  const chaseItems = [];
+  issues.filter(i => i.status !== 'done').forEach(i => {
+    if(i.followup && isOverdue(i.followup)) {
+      chaseItems.push({ id: i.id, label: i.assigned || i.from || i.id, date: i.followup, cls: 'overdue' });
+    } else if(i.followup) {
+      const diff = (new Date(i.followup) - new Date()) / 86400000;
+      if(diff >= 0 && diff <= 3) chaseItems.push({ id: i.id, label: i.assigned || i.from || i.id, date: i.followup, cls: 'soon' });
+    }
+    (i.subtasks||[]).filter(s => s.status !== 'done').forEach(s => {
+      if(s.followup && isOverdue(s.followup)) {
+        chaseItems.push({ id: i.id, label: (s.assigned || i.from || i.id) + ' (task)', date: s.followup, cls: 'overdue' });
+      } else if(s.followup) {
+        const diff = (new Date(s.followup) - new Date()) / 86400000;
+        if(diff >= 0 && diff <= 3) chaseItems.push({ id: i.id, label: (s.assigned || i.from || i.id) + ' (task)', date: s.followup, cls: 'soon' });
+      }
+    });
+  });
+
+  const chaseBar = document.getElementById('chaseBar');
+  if(chaseItems.length > 0) {
+    chaseBar.style.display = 'flex';
+    chaseBar.innerHTML = `<span class="chase-bar-label">⚠ Chase</span>` +
+      chaseItems.map(c => `
+        <div class="chase-chip ${c.cls}" onclick="jumpToCard('${c.id}')" title="Click to jump">
+          <span>${esc(c.label)}</span>
+          <span class="chase-chip-label">${fmtDate(c.date)}</span>
+        </div>`).join('');
+  } else {
+    chaseBar.style.display = 'none';
+  }
+
+  const banner = document.getElementById('alertBanner');
+  banner.style.display = 'none';
+
+  // Filter
+  let list = issues.filter(i => i.status !== 'done');
+  if(filter === 'waiting') list = list.filter(i => i.status === 'waiting');
+  if(filter === 'action')  list = list.filter(i => i.status === 'action');
+  if(filter === 'blocked') list = list.filter(i => i.status === 'blocked');
+
+  // Sort
+  const getSortVal = i => {
+    if(arrangeBy === 'received')  return i.received  || i.createdAt || '';
+    if(arrangeBy === 'created')   return i.createdAt || '';
+    if(arrangeBy === 'source')    return (SRC_LABEL[i.sourceType]||'') + (i.from||'');
+    if(arrangeBy === 'status')    return i.status || '';
+    if(arrangeBy === 'assigned')  return i.assigned || '';
+    return '';
+  };
+  list.sort((a,b) => {
+    const av = getSortVal(a), bv = getSortVal(b);
+    const cmp = av.localeCompare(bv);
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
+
+  const archived = issues.filter(i => i.status === 'done');
+  const tbody = document.getElementById('tableBody');
+  const thead = document.getElementById('tableHeader');
+  let html = '';
+
+  if(list.length === 0 && !showArchive) {
+    thead.style.display = 'none';
+    html = `<div class="empty-state"><h3>No entries</h3><p>Press <strong>N</strong> or click "+ New Entry" to log the first decision.</p></div>`;
+  } else {
+    thead.style.display = 'grid';
+    if(list.length > 0) {
+      html += list.map(i => renderCard(i)).join('');
+    }
+    if(showArchive && archived.length > 0) {
+      html += `<div class="section-header">Archive <span class="section-count">${archived.length}</span></div>`;
+      html += archived.map(i => renderCard(i)).join('');
+    }
+    if(showArchive && archived.length === 0) {
+      html += `<div class="section-header">Archive <span class="section-count">0</span></div>
+               <div style="padding:20px 28px;color:var(--text2);font-size:12px;">No archived entries yet.</div>`;
+    }
+  }
+
+  tbody.innerHTML = html;
+}
+
+function renderCard(issue) {
+  const subs = issue.subtasks || [];
+  const pendingSubs = subs.filter(s => s.status !== 'done').length;
+  const fuClass = isOverdue(issue.followup) && issue.status !== 'done' ? 'overdue' : '';
+  const formatDisplay = issue.format === 'Other' && issue.formatDetail ? issue.formatDetail : (issue.format || '');
+
+  const subsHtml = subs.map(st => {
+    const stFuClass = isOverdue(st.followup) && st.status !== 'done' ? 'overdue' : '';
+    return `
+      <div class="subtask ${st.status}">
+        <div class="subtask-content">
+          <div class="subtask-title">${esc(st.title)}</div>
+          ${st.note ? `<div class="subtask-note">${esc(st.note)}</div>` : ''}
+          <div class="subtask-meta">
+            <span class="tag ${STAT_TAG[st.status]}">${STAT_LABEL[st.status]}</span>
+            ${st.assigned ? `<span class="meta-text">→ ${esc(st.assigned)}</span>` : ''}
+            ${st.followup ? `<span class="meta-text ${stFuClass}">Chase: ${fmtDate(st.followup)}${isOverdue(st.followup)&&st.status!=='done'?' ⚠':''}</span>` : ''}
+          </div>
+        </div>
+        <div class="subtask-actions">
+          <button class="btn-xs" onclick="cycleSubStatus('${issue.id}','${st.id}',event)">→</button>
+          <button class="btn-xs danger" onclick="delSub('${issue.id}','${st.id}',event)">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="issue-card${issue.status==='done'?' is-done':''}" id="card-${issue.id}">
+      <div class="issue-row${issue.status==='done'?' is-done':''}" onclick="toggleCard('${issue.id}')">
+        <div class="col col-received">${issue.received ? fmtDate(issue.received) : '—'}</div>
+        <div class="col col-comment">${esc(issue.comment)}${pendingSubs > 0 ? `<br><span style="font-family:var(--mono);font-size:10px;color:var(--blue);font-weight:400">${pendingSubs} task${pendingSubs>1?'s':''}</span>` : ''}</div>
+        <div class="col col-action">${issue.action ? esc(issue.action) : '<span style="color:var(--border)">—</span>'}</div>
+        <div class="col col-source"><span class="tag ${SRC_TAG[issue.sourceType]||'tag-owner'}">${SRC_LABEL[issue.sourceType]||''}</span></div>
+        <div class="col col-from">${esc(issue.from||'—')}</div>
+        <div class="col col-status"><span class="tag ${STAT_TAG[issue.status]}">${STAT_LABEL[issue.status]}</span></div>
+        <div class="col col-assigned">${esc(issue.assigned||'—')}</div>
+        <div class="col col-chase ${fuClass}">${issue.followup ? fmtDate(issue.followup)+(isOverdue(issue.followup)&&issue.status!=='done'?' ⚠':'') : '—'}</div>
+        <div class="col col-format">${esc(formatDisplay)||'—'}</div>
+        <div class="col col-expand"><span class="expand-icon">▶</span></div>
+      </div>
+      <div class="issue-body" onclick="event.stopPropagation()">
+        ${issue.blocked ? `<div class="detail-grid"><div class="detail-item"><div class="detail-label">On Hold Reason</div><div class="detail-value" style="color:var(--accent)">${esc(issue.blocked)}</div></div></div>` : ''}
+        ${issue.context ? `<div class="context-block">${esc(issue.context)}</div>` : ''}
+        ${subs.length > 0 ? `<div class="subtasks-label">Follow-up Tasks</div>` : ''}
+        ${subsHtml}
+        <button class="add-subtask-btn" onclick="openSubtaskModal('${issue.id}')">＋ Add follow-up task</button>
+        <div class="card-actions" onclick="event.stopPropagation()">
+          <button class="btn-sm" onclick="openEdit('${issue.id}')">Edit</button>
+          ${issue.status !== 'done'
+            ? `<button class="btn-sm primary" onclick="markDone('${issue.id}')">✓ Mark Done</button>`
+            : `<button class="btn-sm" onclick="unarchive('${issue.id}')">↩ Restore</button>`}
+          <button class="btn-sm danger btn-delete" onclick="delIssue('${issue.id}')">Delete</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── INTERACTIONS ───────────────────────────────────────────────────────────
+function jumpToCard(id) {
+  // Switch to active view if needed
+  if(scheduleVisible) toggleScheduleView();
+  // Expand card and scroll to it
+  setTimeout(() => {
+    const card = document.getElementById('card-' + id);
+    if(card) {
+      card.classList.add('expanded');
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.style.outline = '2px solid var(--accent)';
+      setTimeout(() => card.style.outline = '', 2000);
+    }
+  }, 100);
+}
+
+function toggleCard(id) { document.getElementById('card-'+id)?.classList.toggle('expanded'); }
+
+// ── SORT DROPDOWN ──────────────────────────────────────────────────────────
+const ARRANGE_LABELS = {
+  received: 'By Received Date', created: 'By Created Date',
+  source: 'By Source', status: 'By Status', assigned: 'By Assigned To'
+};
+const ARRANGE_LABELS_SHORT = {
+  received: 'Received Date', created: 'Created Date',
+  source: 'Source', status: 'Status', assigned: 'Assigned To'
+};
+
+function toggleSortMenu() {
+  document.getElementById('sortMenu').classList.toggle('open');
+}
+
+function setArrange(val, el) {
+  arrangeBy = val;
+  // Clear all arrange checkmarks
+  ['received','created','source','status','assigned'].forEach(v => {
+    const item = document.querySelector(`[data-arrange="${v}"]`);
+    if(item) item.textContent = ARRANGE_LABELS_SHORT[v];
+  });
+  // Set selected
+  el.textContent = '✓ ' + ARRANGE_LABELS_SHORT[val];
+  document.getElementById('sortLabel').textContent = ARRANGE_LABELS[val];
+  document.getElementById('sortMenu').classList.remove('open');
+  render();
+}
+
+function setSortDir(val, el) {
+  sortDir = val;
+  // Clear both sort checkmarks
+  const ascEl  = document.querySelector('[data-sort="asc"]');
+  const descEl = document.querySelector('[data-sort="desc"]');
+  if(ascEl)  ascEl.textContent  = 'Oldest on Top';
+  if(descEl) descEl.textContent = 'Newest on Top';
+  // Set selected
+  el.textContent = '✓ ' + el.textContent;
+  document.getElementById('sortMenu').classList.remove('open');
+  render();
+}
+
+// Close sort menu when clicking outside
+document.addEventListener('click', e => {
+  if(!document.getElementById('sortWrap')?.contains(e.target)) {
+    document.getElementById('sortMenu')?.classList.remove('open');
+  }
+});
+
+function setFilter(f, btn) {
+  filter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function toggleArchive() {
+  showArchive = !showArchive;
+  document.getElementById('archiveBtn').textContent = showArchive ? 'Hide Archive' : 'Show Archive';
+  render();
+}
+
+function markDone(id) {
+  const i = issues.find(x => x.id===id);
+  if(i) { i.status='done'; save(); render(); }
+}
+function unarchive(id) {
+  const i = issues.find(x => x.id===id);
+  if(i) { i.status='action'; save(); render(); }
+}
+let deletePending = null;
+let deleteTimer = null;
+
+function delIssue(id) {
+  if (deletePending === id) {
+    // Second click — confirmed
+    clearTimeout(deleteTimer);
+    deletePending = null;
+    issues = issues.filter(x => x.id !== id);
+    save(); render();
+  } else {
+    // First click — ask for confirmation
+    if (deletePending) {
+      // Cancel any previous pending delete
+      clearTimeout(deleteTimer);
+      resetDeleteBtn(deletePending);
+    }
+    deletePending = id;
+    const btn = document.querySelector(`#card-${id} .btn-delete`);
+    if (btn) {
+      btn.textContent = 'Confirm?';
+      btn.style.cssText = 'background:#C84B2F;color:white;border-color:#C84B2F';
+    }
+    deleteTimer = setTimeout(() => {
+      deletePending = null;
+      resetDeleteBtn(id);
+    }, 3000);
+  }
+}
+
+function resetDeleteBtn(id) {
+  const btn = document.querySelector(`#card-${id} .btn-delete`);
+  if (btn) {
+    btn.textContent = 'Delete';
+    btn.style.cssText = '';
+  }
+}
+
+function cycleSubStatus(issueId, stId, e) {
+  e.stopPropagation();
+  const order = ['waiting','action','blocked','done'];
+  const issue = issues.find(x => x.id===issueId);
+  if(!issue) return;
+  const st = issue.subtasks.find(s => s.id===stId);
+  if(!st) return;
+  st.status = order[(order.indexOf(st.status)+1) % order.length];
+  save(); render();
+  setTimeout(() => document.getElementById('card-'+issueId)?.classList.add('expanded'), 10);
+}
+function delSub(issueId, stId, e) {
+  e.stopPropagation();
+  const issue = issues.find(x => x.id===issueId);
+  if(!issue) return;
+  issue.subtasks = issue.subtasks.filter(s => s.id!==stId);
+  save(); render();
+  setTimeout(() => document.getElementById('card-'+issueId)?.classList.add('expanded'), 10);
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+function toggleOther(containerId, select) {
+  document.getElementById(containerId).style.display = select.value === 'Other' ? 'block' : 'none';
+}
+
+// ── MODALS ─────────────────────────────────────────────────────────────────
+function openModal(id) {
+  if(id === 'milestoneModal') {
+    document.getElementById('ms_name').value = '';
+    document.getElementById('ms_date').value = '';
+  }
+  if(id === 'projectInfoModal') {
+    const pi = projectInfo;
+    document.getElementById('pi_number').value      = pi.number    || '';
+    document.getElementById('pi_phase').value       = pi.phase     || '';
+    document.getElementById('pi_client').value      = pi.client    || '';
+    document.getElementById('pi_address').value     = pi.address   || '';
+    document.getElementById('pi_startDate').value   = pi.startDate || '';
+    document.getElementById('pi_status').value      = pi.status    || 'Active';
+    document.getElementById('pi_description').value = pi.description || '';
+  }
+  if(id === 'feeModal') { openFeeModal(); return; }
+  if(id === 'memberModal') {
+    ['mb_name','mb_company','mb_role','mb_email','mb_phone'].forEach(i => document.getElementById(i).value='');
+  }
+  if(id === 'docModal') {
+    ['doc_label','doc_url'].forEach(i => document.getElementById(i).value='');
+  }
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function openNewModal() {
+  updatePeopleDropdowns();
+  ['f_comment','f_action','f_blocked','f_context','f_received','f_formatDetail'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('f_sourceType').value = 'owner';
+  document.getElementById('f_format').value = '';
+  document.getElementById('f_status').value = 'waiting';
+  document.getElementById('f_followup').value = '';
+  document.getElementById('f_formatOther').style.display = 'none';
+  document.getElementById('f_from').value = '';
+  document.getElementById('f_assigned').value = '';
+  openModal('newModal');
+  setTimeout(() => document.getElementById('f_comment').focus(), 100);
+}
+  document.getElementById('f_followup').value = '';
+  document.getElementById('f_formatOther').style.display = 'none';
+  openModal('newModal');
+  setTimeout(() => document.getElementById('f_comment').focus(), 100);
+}
+
+function saveNew() {
+  const comment = document.getElementById('f_comment').value.trim();
+  if(!comment) { alert('Original Comment is required'); return; }
+  issues.unshift({
+    id: genId(),
+    comment,
+    action:       document.getElementById('f_action').value.trim(),
+    sourceType:   document.getElementById('f_sourceType').value,
+    from:         document.getElementById('f_from').value.trim(),
+    assigned:     document.getElementById('f_assigned').value.trim(),
+    received:     document.getElementById('f_received').value,
+    format:       document.getElementById('f_format').value,
+    formatDetail: document.getElementById('f_formatDetail').value.trim(),
+    status:       document.getElementById('f_status').value,
+    followup:     document.getElementById('f_followup').value,
+    blocked:      document.getElementById('f_blocked').value.trim(),
+    context:      document.getElementById('f_context').value.trim(),
+    date:         todayStr(),
+    subtasks:     [],
+    createdAt:    todayStr()
+  });
+  save(); closeModal('newModal'); render();
+}
+
+function openEdit(id) {
+  updatePeopleDropdowns();
+  editingId = id;
+  const i = issues.find(x => x.id===id);
+  if(!i) return;
+  document.getElementById('e_comment').value      = i.comment      || '';
+  document.getElementById('e_action').value       = i.action       || '';
+  document.getElementById('e_sourceType').value   = i.sourceType   || 'owner';
+  document.getElementById('e_from').value         = i.from         || '';
+  document.getElementById('e_assigned').value     = i.assigned     || '';
+  document.getElementById('e_received').value     = i.received     || '';
+  document.getElementById('e_format').value       = i.format       || '';
+  document.getElementById('e_formatDetail').value = i.formatDetail || '';
+  document.getElementById('e_formatOther').style.display = i.format === 'Other' ? 'block' : 'none';
+  document.getElementById('e_status').value       = i.status       || 'waiting';
+  document.getElementById('e_followup').value     = i.followup     || '';
+  document.getElementById('e_blocked').value      = i.blocked      || '';
+  document.getElementById('e_context').value      = i.context      || '';
+  openModal('editModal');
+}
+
+function saveEdit() {
+  const i = issues.find(x => x.id===editingId);
+  if(!i) return;
+  const comment = document.getElementById('e_comment').value.trim();
+  if(!comment) { alert('Original Comment is required'); return; }
+  i.comment      = comment;
+  i.action       = document.getElementById('e_action').value.trim();
+  i.sourceType   = document.getElementById('e_sourceType').value;
+  i.from         = document.getElementById('e_from').value.trim();
+  i.assigned     = document.getElementById('e_assigned').value.trim();
+  i.received     = document.getElementById('e_received').value;
+  i.format       = document.getElementById('e_format').value;
+  i.formatDetail = document.getElementById('e_formatDetail').value.trim();
+  i.status       = document.getElementById('e_status').value;
+  i.followup     = document.getElementById('e_followup').value;
+  i.blocked      = document.getElementById('e_blocked').value.trim();
+  i.context      = document.getElementById('e_context').value.trim();
+  save(); closeModal('editModal'); render();
+  setTimeout(() => document.getElementById('card-'+editingId)?.classList.add('expanded'), 10);
+}
+
+function openSubtaskModal(issueId) {
+  subtaskTargetId = issueId;
+  ['st_title','st_assigned','st_followup','st_note'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('st_status').value = 'waiting';
+  openModal('subtaskModal');
+  setTimeout(() => document.getElementById('st_title').focus(), 100);
+}
+
+function saveSubtask() {
+  const title = document.getElementById('st_title').value.trim();
+  if(!title) { alert('Task description is required'); return; }
+  const issue = issues.find(x => x.id===subtaskTargetId);
+  if(!issue) return;
+  if(!issue.subtasks) issue.subtasks = [];
+  issue.subtasks.push({
+    id:       'T-'+Date.now(),
+    title,
+    assigned: document.getElementById('st_assigned').value.trim(),
+    status:   document.getElementById('st_status').value,
+    followup: document.getElementById('st_followup').value,
+    note:     document.getElementById('st_note').value.trim()
+  });
+  save(); closeModal('subtaskModal'); render();
+  setTimeout(() => document.getElementById('card-'+subtaskTargetId)?.classList.add('expanded'), 10);
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────────────────
+function toggleDashboard() {
+  dashboardVisible = !dashboardVisible;
+  if(dashboardVisible && scheduleVisible) toggleScheduleView();
+  document.getElementById('dashboardView').style.display  = dashboardVisible ? 'block' : 'none';
+  document.getElementById('mainContent').style.display    = dashboardVisible ? 'none'  : 'block';
+  document.getElementById('chaseBar').style.display       = dashboardVisible ? 'none'  : '';
+  document.getElementById('tableHeader').style.display    = dashboardVisible ? 'none'  : 'grid';
+  document.getElementById('newEntryBtn').style.display    = dashboardVisible ? 'none'  : '';
+  document.getElementById('archiveBtn').style.display     = dashboardVisible ? 'none'  : '';
+  document.getElementById('filterGroup').style.display    = dashboardVisible ? 'none'  : '';
+  document.getElementById('sortWrap').style.display       = dashboardVisible ? 'none'  : '';
+  document.getElementById('dashboardBtn').textContent     = dashboardVisible ? '✕ Close Dashboard' : '⊞ Dashboard';
+  document.getElementById('dashboardBtn').style.borderColor = dashboardVisible ? 'var(--accent)' : '#2D7A4F';
+  document.getElementById('dashboardBtn').style.color       = dashboardVisible ? 'var(--accent)' : '#2D7A4F';
+  if(dashboardVisible) renderDashboard();
+}
+
+function renderDashboard() {
+  // Project Info
+  const pi = projectInfo;
+  document.getElementById('dashProjectInfo').innerHTML = `
+    <div class="dash-info-grid">
+      ${pi.number   ? `<div class="dash-info-item"><div class="dash-info-label">Project No.</div><div class="dash-info-value">${esc(pi.number)}</div></div>` : ''}
+      ${pi.phase    ? `<div class="dash-info-item"><div class="dash-info-label">Phase</div><div class="dash-info-value">${esc(pi.phase)}</div></div>` : ''}
+      ${pi.client   ? `<div class="dash-info-item"><div class="dash-info-label">Client</div><div class="dash-info-value">${esc(pi.client)}</div></div>` : ''}
+      ${pi.status   ? `<div class="dash-info-item"><div class="dash-info-label">Status</div><div class="dash-info-value">${esc(pi.status)}</div></div>` : ''}
+      ${pi.address  ? `<div class="dash-info-item"><div class="dash-info-label">Address</div><div class="dash-info-value">${esc(pi.address)}</div></div>` : ''}
+      ${pi.startDate? `<div class="dash-info-item"><div class="dash-info-label">Start Date</div><div class="dash-info-value">${pi.startDate}</div></div>` : ''}
+    </div>
+    ${pi.description ? `<div class="dash-description">${esc(pi.description)}</div>` : '<div style="color:var(--text2);font-size:12px;margin-top:8px;">Click Edit to add project details.</div>'}
+  `;
+
+  // Stats
+  const active  = issues.filter(i => i.status !== 'done').length;
+  const waiting = issues.filter(i => i.status === 'waiting').length;
+  const blocked = issues.filter(i => i.status === 'blocked').length;
+  const done    = issues.filter(i => i.status === 'done').length;
+  let overdue = 0;
+  issues.forEach(i => { if(i.status!=='done' && isOverdue(i.followup)) overdue++; });
+  document.getElementById('dashStats').innerHTML = `
+    <div class="dash-stat-row">
+      <div class="dash-stat-item"><div class="dash-stat-num">${active}</div><div class="dash-stat-lbl">Active</div></div>
+      <div class="dash-stat-item"><div class="dash-stat-num" style="color:var(--yellow)">${waiting}</div><div class="dash-stat-lbl">Waiting</div></div>
+      <div class="dash-stat-item"><div class="dash-stat-num" style="color:var(--accent)">${blocked}</div><div class="dash-stat-lbl">Blocked</div></div>
+      <div class="dash-stat-item"><div class="dash-stat-num" style="color:var(--accent)">${overdue}</div><div class="dash-stat-lbl">Overdue</div></div>
+      <div class="dash-stat-item"><div class="dash-stat-num" style="color:var(--green)">${done}</div><div class="dash-stat-lbl">Archived</div></div>
+    </div>
+  `;
+
+  // Fee
+  const fp = feePlan;
+  const total = parseFloat(fp.total) || 0;
+  const phases = fp.phases || [];
+  const totalBilledPct = phases.reduce((s, p) => s + (parseFloat(p.billed)||0), 0);
+  const totalBilledAmt = total * totalBilledPct / 100;
+  document.getElementById('dashFee').innerHTML = total > 0 ? `
+    <div class="fee-total-row">
+      <span class="fee-total-num">$${total.toLocaleString()}</span>
+      <span class="fee-total-lbl">contract total</span>
+      <span style="margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--blue)">$${totalBilledAmt.toLocaleString(undefined,{maximumFractionDigits:0})} billed (${totalBilledPct}%)</span>
+    </div>
+    ${phases.map(p => {
+      const allocPct = parseFloat(p.alloc)||0;
+      const billedPct = parseFloat(p.billed)||0;
+      return `
+        <div class="fee-phase-row">
+          <span class="fee-phase-name">${esc(p.name)}</span>
+          <div class="fee-bar-wrap">
+            <div class="fee-bar-fill" style="width:${allocPct}%;opacity:0.3"></div>
+          </div>
+          <div class="fee-bar-wrap" style="position:relative;margin-left:-100%;background:transparent">
+            <div class="fee-bar-fill billed" style="width:${billedPct}%"></div>
+          </div>
+          <span class="fee-phase-pct">${billedPct}%</span>
+          <span class="fee-phase-amt">$${(total*billedPct/100).toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+        </div>`;
+    }).join('')}
+    <div style="font-size:10px;color:var(--text2);margin-top:8px;font-family:var(--mono)">Gray = allocated · Blue = billed</div>
+  ` : '<div style="color:var(--text2);font-size:12px;">Click Edit to add contract fee details.</div>';
+
+  // Team
+  const companies = [...new Set(teamMembers.map(m => m.company).filter(Boolean))];
+  document.getElementById('dashTeam').innerHTML = teamMembers.length > 0 ? `
+    <table class="team-table">
+      <thead><tr>
+        <th>Name</th><th>Company</th><th>Role</th><th>Email</th><th>Phone</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${teamMembers.map((m,i) => `
+          <tr>
+            <td><strong>${esc(m.name)}</strong></td>
+            <td><span class="team-company">${esc(m.company||'')}</span></td>
+            <td>${esc(m.role||'')}</td>
+            <td>${m.email ? `<a href="mailto:${esc(m.email)}">${esc(m.email)}</a>` : '—'}</td>
+            <td>${esc(m.phone||'—')}</td>
+            <td><button class="btn-xs danger" onclick="delMember(${i})">✕</button></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  ` : '<div style="color:var(--text2);font-size:12px;">No team members yet. Click "+ Add Member".</div>';
+
+  // Docs
+  document.getElementById('dashDocs').innerHTML = docLinks.length > 0
+    ? docLinks.map((d,i) => `
+        <div class="doc-item">
+          <a class="doc-link" href="${esc(d.url)}" target="_blank">↗ ${esc(d.label)}</a>
+          <button class="btn-xs danger" onclick="delDoc(${i})">✕</button>
+        </div>`).join('')
+    : '<div style="color:var(--text2);font-size:12px;">No links yet. Click "+ Add Link".</div>';
+
+  // Update From/Assigned dropdowns with team data
+  updatePeopleDropdowns(companies);
+}
+
+function updatePeopleDropdowns(companies) {
+  const people = teamMembers.map(m => m.name).filter(Boolean);
+  const firmsList = companies || [...new Set(teamMembers.map(m => m.company).filter(Boolean))];
+
+  ['f_from','e_from'].forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    const val = el.value;
+    el.innerHTML = `<option value="">— select —</option>` +
+      people.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+    el.value = val;
+  });
+
+  ['f_assigned','e_assigned'].forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    const val = el.value;
+    el.innerHTML = `<option value="">— select —</option>` +
+      `<optgroup label="People">` + people.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('') + `</optgroup>` +
+      `<optgroup label="Companies">` + firmsList.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('') + `</optgroup>`;
+    el.value = val;
+  });
+}
+
+// Project Info
+function saveProjectInfo() {
+  projectInfo = {
+    number:    document.getElementById('pi_number').value.trim(),
+    phase:     document.getElementById('pi_phase').value,
+    client:    document.getElementById('pi_client').value.trim(),
+    address:   document.getElementById('pi_address').value.trim(),
+    startDate: document.getElementById('pi_startDate').value,
+    status:    document.getElementById('pi_status').value,
+    description: document.getElementById('pi_description').value.trim(),
+  };
+  save(); closeModal('projectInfoModal'); renderDashboard();
+}
+
+// Fee
+let feePhaseRows = [];
+function openFeeModal() {
+  document.getElementById('fee_total').value = feePlan.total || '';
+  feePhaseRows = JSON.parse(JSON.stringify(feePlan.phases || []));
+  renderFeePhaseList();
+  openModal('feeModal');
+}
+function renderFeePhaseList() {
+  document.getElementById('feePhaseList').innerHTML = feePhaseRows.map((p,i) => `
+    <div class="fee-phase-edit-row">
+      <input class="form-input" value="${esc(p.name)}" placeholder="Phase (e.g. SD)" onchange="feePhaseRows[${i}].name=this.value">
+      <input class="form-input" type="number" value="${p.alloc||0}" placeholder="Alloc%" onchange="feePhaseRows[${i}].alloc=this.value" title="Allocated %">
+      <input class="form-input" type="number" value="${p.billed||0}" placeholder="Billed%" onchange="feePhaseRows[${i}].billed=this.value" title="Billed %">
+      <button class="btn-xs danger" onclick="feePhaseRows.splice(${i},1);renderFeePhaseList()">✕</button>
+    </div>`).join('');
+}
+function addFeePhaseRow() {
+  feePhaseRows.push({ name:'', alloc:0, billed:0 });
+  renderFeePhaseList();
+}
+function saveFeePlan() {
+  feePlan = { total: parseFloat(document.getElementById('fee_total').value)||0, phases: feePhaseRows };
+  save(); closeModal('feeModal'); renderDashboard();
+}
+
+// Team
+function saveMember() {
+  const name = document.getElementById('mb_name').value.trim();
+  if(!name) { alert('Name is required'); return; }
+  teamMembers.push({
+    name, company: document.getElementById('mb_company').value.trim(),
+    role: document.getElementById('mb_role').value.trim(),
+    email: document.getElementById('mb_email').value.trim(),
+    phone: document.getElementById('mb_phone').value.trim(),
+  });
+  save(); closeModal('memberModal'); renderDashboard();
+}
+function delMember(i) {
+  teamMembers.splice(i, 1);
+  save(); renderDashboard();
+}
+
+// Docs
+function saveDoc() {
+  const label = document.getElementById('doc_label').value.trim();
+  const url   = document.getElementById('doc_url').value.trim();
+  if(!label || !url) { alert('Label and URL are required'); return; }
+  docLinks.push({ label, url });
+  save(); closeModal('docModal'); renderDashboard();
+}
+function delDoc(i) {
+  docLinks.splice(i, 1);
+  save(); renderDashboard();
+}
+
+// ── SCHEDULE VIEW ──────────────────────────────────────────────────────────
+let scheduleVisible = false;
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function weekday(dateStr) {
+  if(!dateStr) return '';
+  const [y,m,d] = dateStr.split('-').map(Number);
+  return DAYS[new Date(y, m-1, d).getDay()];
+}
+
+function countdown(dateStr) {
+  if(!dateStr) return '';
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const target = new Date(y, m-1, d);
+  const now = new Date(); now.setHours(0,0,0,0);
+  const diff = Math.round((target - now) / 86400000);
+  if(diff < 0)  return `${Math.abs(diff)}d ago`;
+  if(diff === 0) return 'Today';
+  if(diff === 1) return 'Tomorrow';
+  return `In ${diff} days`;
+}
+
+function msClass(dateStr) {
+  if(!dateStr) return 'future';
+  if(isOverdue(dateStr)) return 'overdue';
+  if(isMilestoneSoon(dateStr)) return 'soon';
+  return 'future';
+}
+
+function toggleScheduleView() {
+  scheduleVisible = !scheduleVisible;
+  document.getElementById('scheduleView').style.display  = scheduleVisible ? 'block' : 'none';
+  document.getElementById('mainContent').style.display   = scheduleVisible ? 'none'  : 'block';
+  document.getElementById('chaseBar').style.display     = scheduleVisible ? 'none' : '';
+  document.getElementById('tableHeader').style.display  = scheduleVisible ? 'none' : 'grid';
+  document.getElementById('newEntryBtn').style.display   = scheduleVisible ? 'none'  : '';
+  document.getElementById('archiveBtn').style.display    = scheduleVisible ? 'none'  : '';
+  document.getElementById('filterGroup').style.display   = scheduleVisible ? 'none'  : '';
+  document.getElementById('scheduleBtn').textContent     = scheduleVisible ? '✕ Close Schedule' : '📅 Schedule';
+  document.getElementById('scheduleBtn').style.borderColor = scheduleVisible ? 'var(--accent)' : 'var(--blue)';
+  document.getElementById('scheduleBtn').style.color       = scheduleVisible ? 'var(--accent)' : 'var(--blue)';
+  if(scheduleVisible) renderSchedule();
+}
+
+function renderSchedule() {
+  const sorted = [...milestones].sort((a,b) => a.date.localeCompare(b.date));
+  const todayS = todayStr();
+
+  // Split past/future relative to today marker position
+  const past   = sorted.filter(m => m.date <  todayS);
+  const future = sorted.filter(m => m.date >= todayS);
+
+  function renderItem(m) {
+    const cls = msClass(m.date);
+    const [y,mo,d] = m.date.split('-').map(Number);
+    const dayNum = String(d);
+    const monthYear = `${MONTHS[mo-1]} ${y}`;
+    const wd = weekday(m.date);
+    const cd = countdown(m.date);
+    return `
+      <div class="schedule-item ${cls}">
+        <div class="schedule-date-block">
+          <div class="schedule-date-day">${dayNum}</div>
+          <div class="schedule-date-monthyear">${monthYear}</div>
+          <div class="schedule-date-weekday ${cls}">${wd}</div>
+        </div>
+        <div class="schedule-info">
+          <div class="schedule-name">${esc(m.name)}</div>
+          <div class="schedule-countdown ${cls}">${cd}</div>
+        </div>
+        <div class="schedule-item-actions">
+          <button class="btn-sm danger" onclick="delMilestone('${m.id}')">Remove</button>
+        </div>
+      </div>`;
+  }
+
+  let html = '<div class="schedule-timeline">';
+  if(past.length > 0) html += past.map(renderItem).join('');
+
+  // Today marker
+  const [ty,tm,td] = todayS.split('-').map(Number);
+  html += `
+    <div class="schedule-today-marker">
+      <div class="schedule-today-dot"></div>
+      <span class="schedule-today-label">Today — ${DAYS[new Date(ty,tm-1,td).getDay()]} ${MONTHS[tm-1]} ${td}</span>
+    </div>`;
+
+  if(future.length > 0) html += future.map(renderItem).join('');
+
+  if(sorted.length === 0) {
+    html += `<div style="padding:40px 0; color:var(--text2); font-size:13px;">No milestones yet. Click "+ Add Milestone" to start.</div>`;
+  }
+
+  html += '</div>';
+  document.getElementById('scheduleContent').innerHTML = html;
+}
+
+// ── COPY MILESTONES ────────────────────────────────────────────────────────
+function copyMilestones() {
+  if(milestones.length === 0) {
+    alert('No milestones to copy.');
+    return;
+  }
+  const sorted = [...milestones].sort((a,b) => a.date.localeCompare(b.date));
+  const maxLen = Math.max(...sorted.map(m => m.name.length));
+
+  const lines = [
+    `Project Milestones — ${project}`,
+    '─'.repeat(maxLen + 20),
+    ...sorted.map(m => {
+      const [y,mo,d] = m.date.split('-').map(Number);
+      const dateStr = `${MONTHS[mo-1]} ${String(d).padStart(2,' ')} (${weekday(m.date)})`;
+      return m.name.padEnd(maxLen + 2) + dateStr;
+    })
+  ];
+
+  navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    const btn = document.querySelector('[onclick="copyMilestones()"]');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    btn.style.background = 'var(--green)';
+    btn.style.color = 'white';
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.style.background = '';
+      btn.style.color = 'var(--green)';
+    }, 2000);
+  });
+}
+
+// ── EXPORT ICS ─────────────────────────────────────────────────────────────
+function exportICS() {
+  if(milestones.length === 0) {
+    alert('No milestones to export. Add some milestones first.');
+    return;
+  }
+
+  function icsDate(dateStr) {
+    // All-day event format: YYYYMMDD
+    return dateStr.replace(/-/g, '');
+  }
+
+  function icsEscape(s) {
+    return s.replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+  }
+
+  const stamp = new Date().toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';
+  const projName = icsEscape(project);
+
+  let lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Decision Tracker//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    `X-WR-CALNAME:${projName} — Milestones`,
+  ];
+
+  milestones.forEach(m => {
+    const uid = `${m.id}-${stamp}@decisiontracker`;
+    const dtStart = icsDate(m.date);
+    // All-day event: DTEND is next day
+    const [y,mo,d] = m.date.split('-').map(Number);
+    const nextDay = new Date(y, mo-1, d+1);
+    const dtEnd = `${nextDay.getFullYear()}${String(nextDay.getMonth()+1).padStart(2,'0')}${String(nextDay.getDate()).padStart(2,'0')}`;
+
+    lines = lines.concat([
+      'BEGIN:VEVENT',
+      `UID:${uid}`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;VALUE=DATE:${dtStart}`,
+      `DTEND;VALUE=DATE:${dtEnd}`,
+      `SUMMARY:${icsEscape(m.name)} — ${icsEscape(project)}`,
+      `DESCRIPTION:Project milestone from Decision Tracker\\nProject: ${icsEscape(project)}`,
+      'END:VEVENT',
+    ]);
+  });
+
+  lines.push('END:VCALENDAR');
+
+  const ics = lines.join('\r\n');
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = project.replace(/\s+/g,'_') + '_milestones.ics';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── MILESTONES ─────────────────────────────────────────────────────────────
+function saveMilestone() {
+  const name = document.getElementById('ms_name').value.trim();
+  const date = document.getElementById('ms_date').value;
+  if(!name || !date) { alert('Name and date are required'); return; }
+  milestones.push({ id: 'M-'+Date.now(), name, date });
+  save(); closeModal('milestoneModal'); render();
+  if(scheduleVisible) renderSchedule();
+}
+function delMilestone(id) {
+  milestones = milestones.filter(m => m.id !== id);
+  save(); render();
+  if(scheduleVisible) renderSchedule();
+}
+
+function openProjectModal() {
+  document.getElementById('proj_name').value = project;
+  openModal('projectModal');
+}
+function saveProject() {
+  project = document.getElementById('proj_name').value.trim() || 'Untitled Project';
+  save(); closeModal('projectModal'); render();
+}
+
+// ── PRINT ──────────────────────────────────────────────────────────────────
+function printReport() {
+  // Show milestones section if any exist
+  const pmEl = document.getElementById('printMilestones');
+  pmEl.style.display = milestones.length > 0 ? 'block' : 'none';
+  // Expand all active cards before printing
+  issues.filter(i => i.status !== 'done').forEach(i => {
+    document.getElementById('card-'+i.id)?.classList.add('expanded');
+  });
+  setTimeout(() => window.print(), 150);
+}
+
+// ── SAVE DATA ──────────────────────────────────────────────────────────────
+function saveData() {
+  const payload = { project, counter, issues, milestones, projectInfo, teamMembers, docLinks, feePlan };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = project.replace(/\s+/g,'_') + '_' + todayStr() + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  unsavedChanges = false;
+  clearTimeout(saveReminderTimer);
+}
+
+// ── LOAD DATA ──────────────────────────────────────────────────────────────
+function loadFromFile(input) {
+  const file = input.files[0];
+  if (!file) return; // user cancelled, do nothing
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.issues) throw new Error('Invalid file');
+      issues       = data.issues       || [];
+      milestones   = data.milestones   || [];
+      project      = data.project      || 'Untitled Project';
+      counter      = data.counter      || issues.length;
+      projectInfo  = data.projectInfo  || {};
+      teamMembers  = data.teamMembers  || [];
+      docLinks     = data.docLinks     || [];
+      feePlan      = data.feePlan      || { total: 0, phases: [] };
+      save();
+      unsavedChanges = false;
+      render();
+      input.value = '';
+    } catch(err) {
+      alert('Could not read file.\n\nMake sure you are selecting a file previously saved from Decision Tracker (.json).');
+      input.value = '';
+    }
+  };
+  reader.onerror = () => {
+    alert('Could not read file. Please try again.');
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ── KEY SHORTCUTS ──────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));
+  if(e.key==='n' && !e.target.matches('input,textarea,select')) openNewModal();
+});
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); });
+});
+
+// ── AUTO-SAVE REMINDER ─────────────────────────────────────────────────────
+
+function showSaveBanner() {
+  let banner = document.getElementById('saveBanner');
+  if(!banner) {
+    banner = document.createElement('div');
+    banner.id = 'saveBanner';
+    banner.style.cssText = `
+      position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
+      background:var(--text); color:var(--bg); padding:12px 20px;
+      font-family:var(--mono); font-size:11px; letter-spacing:0.06em;
+      display:flex; gap:16px; align-items:center; z-index:300;
+      box-shadow:0 4px 20px rgba(0,0,0,0.3);
+    `;
+    banner.innerHTML = `
+      <span>⏱ 15 min passed — save your data?</span>
+      <button onclick="saveDataFromBanner()" style="background:var(--accent);color:white;border:none;padding:4px 14px;font-family:var(--mono);font-size:11px;cursor:pointer;">Save Now</button>
+      <button onclick="dismissSaveBanner()" style="background:transparent;color:#aaa;border:none;font-size:16px;cursor:pointer;padding:0;">✕</button>
+    `;
+    document.body.appendChild(banner);
+  }
+  banner.style.display = 'flex';
+}
+
+function saveDataFromBanner() {
+  saveData();
+  unsavedChanges = false;
+  dismissSaveBanner();
+  resetSaveReminder();
+}
+
+function dismissSaveBanner() {
+  const b = document.getElementById('saveBanner');
+  if(b) b.style.display = 'none';
+  resetSaveReminder();
+}
+
+// Override save() to track unsaved changes - REMOVED, handled in save() directly
+
+// ── BEFOREUNLOAD WARNING ───────────────────────────────────────────────────
+window.addEventListener('beforeunload', e => {
+  if(unsavedChanges) {
+    e.preventDefault();
+    e.returnValue = 'You have unsaved changes. Download your data before leaving?';
+    return e.returnValue;
+  }
+});
+
+function triggerLoadFile() {
+  closeModal('loadPromptModal');
+  document.getElementById('loadFileInput').click();
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+// Always clear local data on open and prompt to load file
+localStorage.removeItem('dt_issues');
+localStorage.removeItem('dt_milestones');
+localStorage.removeItem('dt_project');
+localStorage.removeItem('dt_counter');
+localStorage.removeItem('dt_projectInfo');
+localStorage.removeItem('dt_team');
+localStorage.removeItem('dt_docs');
+localStorage.removeItem('dt_fee');
+issues = [];
+milestones = [];
+project = 'Untitled Project';
+counter = 0;
+projectInfo = {};
+teamMembers = [];
+docLinks = [];
+feePlan = { total: 0, phases: [] };
+
+// Load prompt handled by modal above
+unsavedChanges = false;
+resetSaveReminder();
+render();
+</script>
+</body>
+</html>
