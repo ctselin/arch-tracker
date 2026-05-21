@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Decision Tracker</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
+
 
 :root {
   --bg: #F4F2ED;
@@ -18,8 +18,8 @@
   --green: #2D7A4F;
   --yellow: #9A7000;
   --blue: #1E4D9A;
-  --mono: 'DM Mono', monospace;
-  --sans: 'DM Sans', sans-serif;
+  --mono: 'Courier New', Courier, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -635,6 +635,7 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
 }
 .team-role-owner      { background: #FEF3E2; color: #92400E; }
 .team-role-consultant { background: #EEF2FF; color: #3730A3; }
+.team-role-architect  { background: #E0F2FE; color: #0369A1; }
 .team-role-contractor { background: #F5F3FF; color: #5B21B6; }
 
 /* Doc path */
@@ -662,6 +663,47 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
   gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--surface2);
 }
 .doc-item:last-child { border-bottom: none; }
+
+/* ── CUSTOM DROPDOWN INPUT ── */
+.dropdown-wrap { position: relative; }
+.dropdown-list {
+  display: none; position: absolute; top: 100%; left: 0; right: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-top: none; z-index: 500; max-height: 200px; overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.dropdown-list.open { display: block; }
+.dropdown-option {
+  padding: 8px 12px; font-size: 13px; cursor: pointer;
+  transition: background 0.1s; color: var(--text);
+}
+.dropdown-option:hover { background: var(--surface2); }
+.dropdown-option.group-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text2); padding: 10px 12px 4px;
+  cursor: default; background: transparent;
+}
+.dropdown-option.group-label:hover { background: transparent; }
+
+/* ── TABS ── */
+.tab-bar {
+  display: flex; align-items: stretch;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.tab-btn {
+  padding: 12px 28px; font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500;
+  border: none; background: transparent; cursor: pointer;
+  color: var(--text2); border-bottom: 2px solid transparent;
+  transition: all 0.15s; white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text); background: var(--surface2); }
+.tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+
+.tab-actions {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 16px; margin-left: auto;
+}
 
 /* ── PRINT STYLES ── */
 @media print {
@@ -700,37 +742,39 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
 <body>
 
 <header>
-  <h1>Decision Tracker</h1>
+  <h1>Project Handbook</h1>
   <span class="project-name" onclick="openProjectModal()" id="projectNameDisplay" title="Click to edit">—</span>
 </header>
 
-<div class="toolbar">
-  <button class="btn-primary" id="newEntryBtn" onclick="openNewModal()">＋ New Entry</button>
-  <button class="btn-ghost" onclick="toggleArchive()" id="archiveBtn">Show Archive</button>
-  <button class="btn-ghost" id="dashboardBtn" onclick="toggleDashboard()" style="border-color:#2D7A4F;color:#2D7A4F">⊞ Dashboard</button>
-  <button class="btn-ghost" id="scheduleBtn" onclick="toggleScheduleView()" style="border-color:var(--blue);color:var(--blue)">📅 Schedule</button>
-  <div class="filter-group" id="filterGroup">
-    <button class="filter-btn active" onclick="setFilter('active',this)">Active</button>
-    <button class="filter-btn" onclick="setFilter('waiting',this)">Waiting</button>
-    <button class="filter-btn" onclick="setFilter('action',this)">Action Req.</button>
-    <button class="filter-btn" onclick="setFilter('blocked',this)">Blocked</button>
-  </div>
-  <div class="sort-dropdown-wrap" id="sortWrap">
-    <button class="sort-dropdown-btn" onclick="toggleSortMenu()" id="sortBtn">
-      <span id="sortLabel">By Received Date</span> ▾
-    </button>
-    <div class="sort-menu" id="sortMenu">
-      <div class="sort-menu-section">Arrange by</div>
-      <div class="sort-menu-item" data-arrange="received" onclick="setArrange('received',this)">✓ Received Date</div>
-      <div class="sort-menu-item" data-arrange="created" onclick="setArrange('created',this)">Created Date</div>
-      <div class="sort-menu-item" data-arrange="source" onclick="setArrange('source',this)">Source</div>
-      <div class="sort-menu-item" data-arrange="status" onclick="setArrange('status',this)">Status</div>
-      <div class="sort-menu-item" data-arrange="assigned" onclick="setArrange('assigned',this)">Assigned To</div>
-      <div class="sort-menu-divider"></div>
-      <div class="sort-menu-section">Sort</div>
-      <div class="sort-menu-item" data-sort="asc" onclick="setSortDir('asc',this)">Oldest on Top</div>
-      <div class="sort-menu-item" data-sort="desc" onclick="setSortDir('desc',this)">✓ Newest on Top</div>
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab-dashboard" onclick="switchTab('dashboard')">⊞ Dashboard</button>
+  <button class="tab-btn" id="tab-schedule" onclick="switchTab('schedule')">📅 Schedule</button>
+  <button class="tab-btn" id="tab-decisions" onclick="switchTab('decisions')">📋 Decisions</button>
+  <div class="tab-actions">
+    <button class="btn-ghost" onclick="toggleArchive()" id="archiveBtn" style="display:none">Show Archive</button>
+    <div class="filter-group" id="filterGroup" style="display:none">
+      <button class="filter-btn active" onclick="setFilter('active',this)">Active</button>
+      <button class="filter-btn" onclick="setFilter('waiting',this)">Waiting</button>
+      <button class="filter-btn" onclick="setFilter('action',this)">Action Req.</button>
+      </div>
+    <div class="sort-dropdown-wrap" id="sortWrap" style="display:none">
+      <button class="sort-dropdown-btn" onclick="toggleSortMenu()" id="sortBtn">
+        <span id="sortLabel">By Received Date</span> ▾
+      </button>
+      <div class="sort-menu" id="sortMenu">
+        <div class="sort-menu-section">Arrange by</div>
+        <div class="sort-menu-item" data-arrange="received" onclick="setArrange('received',this)">✓ Received Date</div>
+        <div class="sort-menu-item" data-arrange="created" onclick="setArrange('created',this)">Created Date</div>
+        <div class="sort-menu-item" data-arrange="source" onclick="setArrange('source',this)">Source</div>
+        <div class="sort-menu-item" data-arrange="status" onclick="setArrange('status',this)">Status</div>
+        <div class="sort-menu-item" data-arrange="assigned" onclick="setArrange('assigned',this)">Assigned To</div>
+        <div class="sort-menu-divider"></div>
+        <div class="sort-menu-section">Sort</div>
+        <div class="sort-menu-item" data-sort="asc" onclick="setSortDir('asc',this)">Oldest on Top</div>
+        <div class="sort-menu-item" data-sort="desc" onclick="setSortDir('desc',this)">✓ Newest on Top</div>
+      </div>
     </div>
+    <button class="btn-primary" id="newEntryBtn" onclick="openNewModal()" style="display:none">＋ New Entry</button>
   </div>
 </div>
 
@@ -878,14 +922,14 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
       </div>
       <div class="form-group">
         <label class="form-label">From (Name)</label>
-        <select class="form-select" id="f_from"></select>
+        <input class="form-input" id="f_from" placeholder="Type name" autocomplete="on" name="ph_from" list="knownPeople">
       </div>
     </div>
 
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">Assigned To</label>
-        <select class="form-select" id="f_assigned"></select>
+        <label class="form-label">Assigned To <span style="font-weight:400;opacity:0.6">(use / for multiple)</span></label>
+        <input class="form-input" id="f_assigned" placeholder="e.g. BNAP / GBA" autocomplete="on" name="ph_assigned" list="knownPeopleAndCompanies">
       </div>
       <div class="form-group">
         <label class="form-label">Received Date</label>
@@ -917,7 +961,6 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
         <select class="form-select" id="f_status">
           <option value="waiting">Waiting for Reply</option>
           <option value="action">Action Required</option>
-          <option value="blocked">Blocked / On Hold</option>
           <option value="done">Done</option>
         </select>
       </div>
@@ -970,14 +1013,14 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
       </div>
       <div class="form-group">
         <label class="form-label">From (Name)</label>
-        <select class="form-select" id="e_from"></select>
+        <input class="form-input" id="e_from" placeholder="Type name" autocomplete="on" name="ph_from" list="knownPeople">
       </div>
     </div>
 
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">Assigned To</label>
-        <select class="form-select" id="e_assigned"></select>
+        <label class="form-label">Assigned To <span style="font-weight:400;opacity:0.6">(use / for multiple)</span></label>
+        <input class="form-input" id="e_assigned" placeholder="e.g. BNAP / GBA" autocomplete="on" name="ph_assigned" list="knownPeopleAndCompanies">
       </div>
       <div class="form-group">
         <label class="form-label">Received Date</label>
@@ -1009,7 +1052,6 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
         <select class="form-select" id="e_status">
           <option value="waiting">Waiting for Reply</option>
           <option value="action">Action Required</option>
-          <option value="blocked">Blocked / On Hold</option>
           <option value="done">Done</option>
         </select>
       </div>
@@ -1055,7 +1097,6 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
         <select class="form-select" id="st_status">
           <option value="waiting">Waiting for Reply</option>
           <option value="action">Action Required</option>
-          <option value="blocked">Blocked</option>
           <option value="done">Done</option>
         </select>
       </div>
@@ -1169,16 +1210,28 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
 
 <!-- ═══ DESIGN FEE MODAL ═══ -->
 <div class="modal-overlay" id="feeModal">
-  <div class="modal" style="width:480px">
+  <div class="modal" style="width:680px">
     <button class="modal-close" onclick="closeModal('feeModal')">✕</button>
     <div class="modal-title">Design Fee</div>
-    <div class="form-group">
-      <label class="form-label">Total Contract Fee ($)</label>
-      <input class="form-input" id="fee_total" type="number" placeholder="e.g. 250000">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+      <!-- Architectural Fee -->
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);">Architectural Fee</div>
+        <div class="form-group">
+          <label class="form-label">Total ($)</label>
+          <input class="form-input" id="fee_arch_total" type="number" placeholder="0">
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);margin-bottom:6px;">Billing by Phase</div>
+        <div id="feeArchPhaseList"></div>
+        <button class="add-subtask-btn" onclick="addArchPhaseRow()">＋ Add Phase</button>
+      </div>
+      <!-- Consultants Fee -->
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);">Consultants Fee</div>
+        <div id="feeConsultantList"></div>
+        <button class="add-subtask-btn" onclick="addConsultantRow()">＋ Add Consultant</button>
+      </div>
     </div>
-    <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);margin-bottom:8px;">Billing by Phase</div>
-    <div id="feePhaseList"></div>
-    <button class="add-subtask-btn" onclick="addFeePhaseRow()">＋ Add Phase</button>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeModal('feeModal')">Cancel</button>
       <button class="btn-primary" onclick="saveFeePlan()">Save</button>
@@ -1201,6 +1254,7 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
         <select class="form-select" id="mb_type">
           <option value="">—</option>
           <option value="owner">Owner</option>
+          <option value="architect">Architect</option>
           <option value="consultant">Consultant</option>
           <option value="contractor">Contractor</option>
         </select>
@@ -1211,11 +1265,27 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
         <label class="form-label">Company</label>
         <input class="form-input" id="mb_company" placeholder="">
       </div>
-      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Role</label>
-      <input class="form-input" id="mb_role" placeholder="">
+      <input class="form-input" id="mb_role" placeholder="" list="roleOptions">
+      <datalist id="roleOptions">
+        <option value="Acoustic Engineer">
+        <option value="Architect">
+        <option value="Civil Engineer">
+        <option value="Construction Manager">
+        <option value="Electrical Engineer">
+        <option value="Environmental Engineer">
+        <option value="Estimator">
+        <option value="Fire Protection Engineer">
+        <option value="IT">
+        <option value="Kitchen Equipment Consultant">
+        <option value="Landscape Architect">
+        <option value="Mechanical Engineer">
+        <option value="Owner Representative">
+        <option value="Project Manager">
+        <option value="Structural Engineer">
+      </datalist>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -1226,6 +1296,10 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
         <label class="form-label">Phone</label>
         <input class="form-input" id="mb_phone" placeholder="">
       </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Note</label>
+      <input class="form-input" id="mb_note" placeholder="e.g. Structural lead, In charge of MEP coordination">
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeModal('memberModal')">Cancel</button>
@@ -1250,6 +1324,58 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeModal('docModal')">Cancel</button>
       <button class="btn-primary" onclick="saveDoc()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EDIT MEMBER MODAL ═══ -->
+<div class="modal-overlay" id="editMemberModal">
+  <div class="modal" style="width:480px">
+    <button class="modal-close" onclick="closeModal('editMemberModal')">✕</button>
+    <div class="modal-title">Edit Team Member</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Name *</label>
+        <input class="form-input" id="em_name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select class="form-select" id="em_type">
+          <option value="">—</option>
+          <option value="owner">Owner</option>
+          <option value="architect">Architect</option>
+          <option value="consultant">Consultant</option>
+          <option value="contractor">Contractor</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Company</label>
+        <input class="form-input" id="em_company">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <input class="form-input" id="em_role" list="roleOptions">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="em_email" type="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input class="form-input" id="em_phone">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Note</label>
+      <input class="form-input" id="em_note" placeholder="e.g. Structural lead, In charge of MEP coordination">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('editMemberModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveEditMember()">Update</button>
     </div>
   </div>
 </div>
@@ -1288,7 +1414,18 @@ header h1 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; t
   </div>
 </div>
 
+<!-- Shared datalists for autocomplete -->
+<datalist id="knownPeople"></datalist>
+<datalist id="knownPeopleAndCompanies"></datalist>
+
 <script>
+const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MEMBER_TYPES = ['owner', 'architect', 'consultant', 'contractor'];
+const MEMBER_TYPE_LABEL = { owner:'Owner', architect:'Architect', consultant:'Consultant', contractor:'Contractor' };
+const ROLE_TAG_MAP = { owner:'team-role-owner', architect:'team-role-architect', consultant:'team-role-consultant', contractor:'team-role-contractor' };
+let dropdownData = { people: [], companies: [] };
+
 // ── STATE ──────────────────────────────────────────────────────────────────
 let issues     = JSON.parse(localStorage.getItem('dt_issues')      || '[]');
 let milestones = JSON.parse(localStorage.getItem('dt_milestones')  || '[]');
@@ -1308,6 +1445,9 @@ let arrangeBy  = 'received';
 let sortDir    = 'desc';
 let unsavedChanges = false;
 let saveReminderTimer = null;
+let editingMemberIdx = null;
+let delMemberPending = null;
+let delMemberTimer = null;
 
 function markUnsaved() {
   unsavedChanges = true;
@@ -1340,8 +1480,8 @@ function isMilestoneSoon(d) { if(!d) return false; const diff=(new Date(d)-new D
 
 const SRC_LABEL  = { owner:'Owner', consultant:'Consultant', internal:'Internal', contractor:'Contractor' };
 const SRC_TAG    = { owner:'tag-owner', consultant:'tag-consultant', internal:'tag-internal', contractor:'tag-contractor' };
-const STAT_LABEL = { waiting:'Waiting', action:'Action Req.', blocked:'Blocked', done:'Done' };
-const STAT_TAG   = { waiting:'tag-waiting', action:'tag-action', blocked:'tag-blocked', done:'tag-done' };
+const STAT_LABEL = { waiting:'Waiting', action:'Action Req.', blocked:'Waiting', done:'Done' };
+const STAT_TAG   = { waiting:'tag-waiting', action:'tag-action', blocked:'tag-waiting', done:'tag-done' };
 
 function esc(s) {
   if(!s) return '';
@@ -1371,8 +1511,6 @@ function render() {
     <div class="stat"><span class="stat-num">${active.length}</span><span class="stat-label">Active</span></div>
     <div class="stat"><span class="stat-num yellow">${waiting}</span><span class="stat-label">Waiting</span></div>
     <div class="stat"><span class="stat-num" style="color:var(--blue)">${action}</span><span class="stat-label">Action Req.</span></div>
-    <div class="stat"><span class="stat-num red">${blocked}</span><span class="stat-label">Blocked</span></div>
-    <div class="stat"><span class="stat-num red">${overdue}</span><span class="stat-label">Overdue</span></div>
     <div class="stat"><span class="stat-num green">${done}</span><span class="stat-label">Archived</span></div>
   `;
 
@@ -1537,9 +1675,7 @@ function renderCard(issue) {
 
 // ── INTERACTIONS ───────────────────────────────────────────────────────────
 function jumpToCard(id) {
-  // Switch to active view if needed
-  if(scheduleVisible) toggleScheduleView();
-  // Expand card and scroll to it
+  if(currentTab !== 'decisions') switchTab('decisions');
   setTimeout(() => {
     const card = document.getElementById('card-' + id);
     if(card) {
@@ -1706,7 +1842,7 @@ function openModal(id) {
   }
   if(id === 'feeModal') { openFeeModal(); return; }
   if(id === 'memberModal') {
-    ['mb_name','mb_company','mb_role','mb_email','mb_phone'].forEach(i => document.getElementById(i).value='');
+    ['mb_name','mb_company','mb_role','mb_email','mb_phone','mb_note'].forEach(i => document.getElementById(i).value='');
     document.getElementById('mb_type').value = '';
   }
   if(id === 'docModal') {
@@ -1714,11 +1850,19 @@ function openModal(id) {
   }
   document.getElementById(id).classList.add('open');
 }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModal(id) {
+  const modal = document.getElementById(id);
+  if(!modal) return;
+  modal.classList.remove('open');
+  modal.style.display = '';
+}
 
 function openNewModal() {
   updatePeopleDropdowns();
-  ['f_comment','f_action','f_blocked','f_context','f_received','f_formatDetail'].forEach(id => document.getElementById(id).value='');
+  ['f_comment','f_action','f_blocked','f_context','f_received','f_formatDetail','f_from'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
   document.getElementById('f_sourceType').value = 'owner';
   document.getElementById('f_format').value = '';
   document.getElementById('f_status').value = 'waiting';
@@ -1728,19 +1872,22 @@ function openNewModal() {
   document.getElementById('f_assigned').value = '';
   openModal('newModal');
   setTimeout(() => document.getElementById('f_comment').focus(), 100);
-  openModal('newModal');
-  setTimeout(() => document.getElementById('f_comment').focus(), 100);
 }
 
 function saveNew() {
   const comment = document.getElementById('f_comment').value.trim();
   if(!comment) { alert('Original Comment is required'); return; }
+  const fromName = document.getElementById('f_from').value.trim();
+  // Auto-add to team if new name
+  if(fromName && !teamMembers.find(m => m.name === fromName)) {
+    teamMembers.push({ name: fromName, type:'', company:'', role:'', email:'', phone:'' });
+  }
   issues.unshift({
     id: genId(),
     comment,
     action:       document.getElementById('f_action').value.trim(),
     sourceType:   document.getElementById('f_sourceType').value,
-    from:         document.getElementById('f_from').value.trim(),
+    from:         fromName,
     assigned:     document.getElementById('f_assigned').value.trim(),
     received:     document.getElementById('f_received').value,
     format:       document.getElementById('f_format').value,
@@ -1824,23 +1971,48 @@ function saveSubtask() {
   setTimeout(() => document.getElementById('card-'+subtaskTargetId)?.classList.add('expanded'), 10);
 }
 
-// ── DASHBOARD ──────────────────────────────────────────────────────────────
-function toggleDashboard() {
-  dashboardVisible = !dashboardVisible;
-  if(dashboardVisible && scheduleVisible) toggleScheduleView();
-  document.getElementById('dashboardView').style.display  = dashboardVisible ? 'block' : 'none';
-  document.getElementById('mainContent').style.display    = dashboardVisible ? 'none'  : 'block';
-  document.getElementById('chaseBar').style.display       = dashboardVisible ? 'none'  : '';
-  document.getElementById('tableHeader').style.display    = dashboardVisible ? 'none'  : 'grid';
-  document.getElementById('newEntryBtn').style.display    = dashboardVisible ? 'none'  : '';
-  document.getElementById('archiveBtn').style.display     = dashboardVisible ? 'none'  : '';
-  document.getElementById('filterGroup').style.display    = dashboardVisible ? 'none'  : '';
-  document.getElementById('sortWrap').style.display       = dashboardVisible ? 'none'  : '';
-  document.getElementById('dashboardBtn').textContent     = dashboardVisible ? '✕ Close Dashboard' : '⊞ Dashboard';
-  document.getElementById('dashboardBtn').style.borderColor = dashboardVisible ? 'var(--accent)' : '#2D7A4F';
-  document.getElementById('dashboardBtn').style.color       = dashboardVisible ? 'var(--accent)' : '#2D7A4F';
-  if(dashboardVisible) renderDashboard();
+// ── TABS ───────────────────────────────────────────────────────────────────
+let currentTab = 'dashboard';
+
+function switchTab(tab) {
+  currentTab = tab;
+
+  // Update tab buttons
+  ['dashboard','schedule','decisions'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t === tab);
+  });
+
+  // Show/hide views
+  document.getElementById('dashboardView').style.display  = tab === 'dashboard' ? 'block' : 'none';
+  document.getElementById('scheduleView').style.display   = tab === 'schedule'  ? 'block' : 'none';
+  document.getElementById('mainContent').style.display    = tab === 'decisions' ? 'block' : 'none';
+  document.getElementById('tableHeader').style.display    = tab === 'decisions' ? 'grid'  : 'none';
+
+  // Stats bar only on decisions
+  document.getElementById('statsBar').style.display       = tab === 'decisions' ? 'flex' : 'none';
+  // Milestone bar on dashboard and decisions
+  document.getElementById('milestoneBar').style.display   = tab !== 'schedule'  ? 'flex' : 'none';
+  // Chase bar only on decisions
+  const chaseBar = document.getElementById('chaseBar');
+  if(chaseBar) chaseBar.style.display = tab === 'decisions' ? '' : 'none';
+
+  // Tab-specific actions
+  document.getElementById('newEntryBtn').style.display    = tab === 'decisions' ? '' : 'none';
+  document.getElementById('archiveBtn').style.display     = tab === 'decisions' ? '' : 'none';
+  document.getElementById('filterGroup').style.display    = tab === 'decisions' ? '' : 'none';
+  document.getElementById('sortWrap').style.display       = tab === 'decisions' ? '' : 'none';
+
+  // Render the active tab
+  if(tab === 'dashboard') { render(); renderDashboard(); }
+  if(tab === 'schedule')  { render(); renderSchedule(); }
+  if(tab === 'decisions') render();
 }
+
+// Keep old functions as aliases for any remaining references
+function toggleDashboard() { switchTab(currentTab === 'dashboard' ? 'decisions' : 'dashboard'); }
+function toggleScheduleView() { switchTab(currentTab === 'schedule' ? 'decisions' : 'schedule'); }
+scheduleVisible = false;
+dashboardVisible = false;
 
 function setPhase(phase, btn) {
   projectInfo.phase = phase;
@@ -1905,68 +2077,73 @@ function renderDashboard() {
     <div class="dash-stat-row">
       <div class="dash-stat-item"><div class="dash-stat-num">${active}</div><div class="dash-stat-lbl">Active</div></div>
       <div class="dash-stat-item"><div class="dash-stat-num" style="color:var(--yellow)">${waiting}</div><div class="dash-stat-lbl">Waiting</div></div>
-      <div class="dash-stat-item"><div class="dash-stat-num" style="color:var(--accent)">${blocked}</div><div class="dash-stat-lbl">Blocked</div></div>
-      <div class="dash-stat-item"><div class="dash-stat-num" style="color:var(--accent)">${overdue}</div><div class="dash-stat-lbl">Overdue</div></div>
       <div class="dash-stat-item"><div class="dash-stat-num" style="color:var(--green)">${done}</div><div class="dash-stat-lbl">Archived</div></div>
     </div>
   `;
 
   // Fee
-  const fp = feePlan || { total: 0, phases: [] };
-  const total = parseFloat(fp.total) || 0;
-  const phases = fp.phases || [];
-  const totalBilledPct = phases.reduce((s, p) => s + (parseFloat(p.billed)||0), 0);
-  const totalBilledAmt = total * totalBilledPct / 100;
-  document.getElementById('dashFee').innerHTML = total > 0 ? `
-    <div class="fee-total-row">
-      <span class="fee-total-num">$${total.toLocaleString()}</span>
-      <span class="fee-total-lbl">contract total</span>
-      <span style="margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--blue)">$${totalBilledAmt.toLocaleString(undefined,{maximumFractionDigits:0})} billed (${totalBilledPct.toFixed(0)}%)</span>
-    </div>
-    ${phases.map(p => {
-      const allocPct = Math.min(parseFloat(p.alloc)||0, 100);
-      const billedPct = Math.min(parseFloat(p.billed)||0, 100);
-      const amt = total * billedPct / 100;
-      return `
-        <div class="fee-phase-row">
+  const fp = feePlan || {};
+  const archTotal = parseFloat(fp.archTotal || fp.total) || 0;
+  const archPhases = fp.archPhases || fp.phases || [];
+  const consultants = fp.consultants || [];
+
+  function renderPhaseBar(phases, total) {
+    if(!total) return '<div style="color:var(--text2);font-size:11px;">No total set.</div>';
+    const totalBilledPct = phases.reduce((s,p) => s+(parseFloat(p.billed)||0), 0);
+    const totalBilledAmt = total * totalBilledPct / 100;
+    return `
+      <div class="fee-total-row" style="margin-bottom:10px">
+        <span class="fee-total-num" style="font-size:16px">$${total.toLocaleString()}</span>
+        <span style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--blue)">$${totalBilledAmt.toLocaleString(undefined,{maximumFractionDigits:0})} billed</span>
+      </div>
+      ${phases.map(p => {
+        const allocPct = Math.min(parseFloat(p.alloc)||0,100);
+        const billedPct = Math.min(parseFloat(p.billed)||0,100);
+        const amt = total * billedPct / 100;
+        return `<div class="fee-phase-row">
           <span class="fee-phase-name">${esc(p.name||'')}</span>
-          <div class="fee-bar-wrap"><div class="fee-bar-fill" style="width:${allocPct}%;opacity:0.25;background:var(--text)"></div></div>
+          <div class="fee-bar-wrap"><div class="fee-bar-fill" style="width:${allocPct}%;opacity:0.2;background:var(--text)"></div></div>
           <div class="fee-bar-wrap"><div class="fee-bar-fill billed" style="width:${billedPct}%"></div></div>
           <span class="fee-phase-pct">${billedPct.toFixed(0)}%</span>
           <span class="fee-phase-amt">$${amt.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
         </div>`;
-    }).join('')}
-    <div style="font-size:10px;color:var(--text2);margin-top:8px;font-family:var(--mono)">Gray = allocated · Blue = billed</div>
+      }).join('')}
+    `;
+  }
+
+  const consultantHTML = consultants.length > 0 ? consultants.map(c => {
+    const ctotal = parseFloat(c.total)||0;
+    const cbilled = Math.min(parseFloat(c.billed)||0,100);
+    const camt = ctotal * cbilled / 100;
+    return `<div class="fee-phase-row">
+      <span class="fee-phase-name">${esc(c.name||'')}</span>
+      <div class="fee-bar-wrap"><div class="fee-bar-fill billed" style="width:${cbilled}%"></div></div>
+      <span class="fee-phase-pct">${cbilled.toFixed(0)}%</span>
+      <span class="fee-phase-amt">$${camt.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+    </div>`;
+  }).join('') + `<div style="font-size:10px;color:var(--text2);margin-top:6px;font-family:var(--mono)">Total: $${consultants.reduce((s,c)=>s+(parseFloat(c.total)||0),0).toLocaleString()}</div>`
+  : '<div style="color:var(--text2);font-size:11px;">No consultants added.</div>';
+
+  const hasData = archTotal > 0 || consultants.length > 0;
+  document.getElementById('dashFee').innerHTML = hasData ? `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);margin-bottom:8px;">Architectural</div>
+        ${renderPhaseBar(archPhases, archTotal)}
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);margin-bottom:8px;">Consultants</div>
+        ${consultantHTML}
+      </div>
+    </div>
   ` : '<div style="color:var(--text2);font-size:12px;">Click Edit to add contract fee details.</div>';
 
   // Scope
   document.getElementById('dashScope').innerHTML = renderScope();
 
   // Team
-  const ROLE_TAG = { owner:'team-role-owner', consultant:'team-role-consultant', contractor:'team-role-contractor' };
   const companies = [...new Set(teamMembers.map(m => m.company).filter(Boolean))];
-  document.getElementById('dashTeam').innerHTML = teamMembers.length > 0 ? `
-    <table class="team-table">
-      <thead><tr>
-        <th>Name</th><th>Type</th><th>Company</th><th>Role</th><th>Email</th><th>Phone</th><th></th>
-      </tr></thead>
-      <tbody>
-        ${teamMembers.map((m,i) => `
-          <tr>
-            <td><strong>${esc(m.name)}</strong></td>
-            <td>${m.type ? `<span class="team-role-tag ${ROLE_TAG[m.type]||''}">${esc(m.type)}</span>` : '—'}</td>
-            <td><span class="team-company">${esc(m.company||'—')}</span></td>
-            <td>${esc(m.role||'—')}</td>
-            <td style="font-family:var(--mono);font-size:11px">${esc(m.email||'—')}</td>
-            <td style="font-family:var(--mono);font-size:11px">${esc(m.phone||'—')}</td>
-            <td style="display:flex;gap:4px;padding-top:8px">
-              <button class="team-copy-btn" onclick="copyMemberInfo(${i},this)">Copy</button>
-              <button class="btn-xs danger" onclick="delMember(${i})">✕</button>
-            </td>
-          </tr>`).join('')}
-      </tbody>
-    </table>
-  ` : '<div style="color:var(--text2);font-size:12px;">No team members yet.</div>';
+  renderTeamTable();
 
   // Docs
   document.getElementById('dashDocs').innerHTML = docLinks.length > 0
@@ -1984,28 +2161,65 @@ function renderDashboard() {
   updatePeopleDropdowns(companies);
 }
 
+// ── CUSTOM DROPDOWN ────────────────────────────────────────────────────────
+
+function buildDropdownOptions(listId, filter) {
+  const { people, companies } = dropdownData;
+  const q = (filter || '').toLowerCase();
+  const filteredPeople = people.filter(n => n.toLowerCase().includes(q));
+  const filteredCompanies = companies.filter(c => c.toLowerCase().includes(q));
+  let html = '';
+  if(filteredPeople.length) {
+    html += `<div class="dropdown-option group-label">People</div>`;
+    html += filteredPeople.map(n =>
+      `<div class="dropdown-option" onmousedown="event.preventDefault();selectDropdownOption('${listId}',${JSON.stringify(n)})">${esc(n)}</div>`
+    ).join('');
+  }
+  if(filteredCompanies.length) {
+    html += `<div class="dropdown-option group-label">Companies</div>`;
+    html += filteredCompanies.map(c =>
+      `<div class="dropdown-option" onmousedown="event.preventDefault();selectDropdownOption('${listId}',${JSON.stringify(c)})">${esc(c)}</div>`
+    ).join('');
+  }
+  return html || `<div class="dropdown-option group-label">No matches</div>`;
+}
+
+function openDropdown(listId) {
+  const list = document.getElementById(listId);
+  if(!list) return;
+  list.innerHTML = buildDropdownOptions(listId, '');
+  list.classList.add('open');
+}
+
+function closeDropdown(listId) {
+  const list = document.getElementById(listId);
+  if(list) list.classList.remove('open');
+}
+
+function filterDropdown(listId, value) {
+  const list = document.getElementById(listId);
+  if(!list || !list.classList.contains('open')) return;
+  list.innerHTML = buildDropdownOptions(listId, value);
+}
+
+function selectDropdownOption(listId, value) {
+  // Find the input associated with this dropdown
+  const inputId = listId.replace('_list','');
+  const input = document.getElementById(inputId);
+  if(input) input.value = value;
+  closeDropdown(listId);
+}
+
 function updatePeopleDropdowns(companies) {
   const people = teamMembers.map(m => m.name).filter(Boolean);
   const firmsList = companies || [...new Set(teamMembers.map(m => m.company).filter(Boolean))];
+  dropdownData = { people, companies: firmsList };
 
-  ['f_from','e_from'].forEach(id => {
-    const el = document.getElementById(id);
-    if(!el) return;
-    const val = el.value;
-    el.innerHTML = `<option value="">— select —</option>` +
-      people.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
-    el.value = val;
-  });
+  const knownPeople = document.getElementById('knownPeople');
+  if(knownPeople) knownPeople.innerHTML = people.map(n => `<option value="${esc(n)}">`).join('');
 
-  ['f_assigned','e_assigned'].forEach(id => {
-    const el = document.getElementById(id);
-    if(!el) return;
-    const val = el.value;
-    el.innerHTML = `<option value="">— select —</option>` +
-      `<optgroup label="People">` + people.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('') + `</optgroup>` +
-      `<optgroup label="Companies">` + firmsList.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('') + `</optgroup>`;
-    el.value = val;
-  });
+  const knownAll = document.getElementById('knownPeopleAndCompanies');
+  if(knownAll) knownAll.innerHTML = [...people, ...firmsList].map(n => `<option value="${esc(n)}">`).join('');
 }
 
 // Project Info
@@ -2024,29 +2238,60 @@ function saveProjectInfo() {
 
 // Fee
 let feePhaseRows = [];
+let feeConsultantRows = [];
+
 function openFeeModal() {
-  document.getElementById('fee_total').value = feePlan.total || '';
-  feePhaseRows = JSON.parse(JSON.stringify(feePlan.phases || []));
-  renderFeePhaseList();
-  openModal('feeModal');
+  const fp = feePlan || { archTotal: 0, archPhases: [], consultants: [] };
+  document.getElementById('fee_arch_total').value = fp.archTotal || fp.total || '';
+  feePhaseRows = JSON.parse(JSON.stringify(fp.archPhases || fp.phases || []));
+  feeConsultantRows = JSON.parse(JSON.stringify(fp.consultants || []));
+  renderFeeArchPhaseList();
+  renderFeeConsultantList();
+  document.getElementById('feeModal').classList.add('open');
 }
-function renderFeePhaseList() {
-  document.getElementById('feePhaseList').innerHTML = feePhaseRows.map((p,i) => `
+
+function renderFeeArchPhaseList() {
+  document.getElementById('feeArchPhaseList').innerHTML = feePhaseRows.map((p,i) => `
     <div class="fee-phase-edit-row">
-      <input class="form-input" value="${esc(p.name)}" placeholder="Phase (e.g. SD)" onchange="feePhaseRows[${i}].name=this.value">
+      <input class="form-input" value="${esc(p.name||'')}" placeholder="Phase" onchange="feePhaseRows[${i}].name=this.value">
       <input class="form-input" type="number" value="${p.alloc||0}" placeholder="Alloc%" onchange="feePhaseRows[${i}].alloc=this.value" title="Allocated %">
       <input class="form-input" type="number" value="${p.billed||0}" placeholder="Billed%" onchange="feePhaseRows[${i}].billed=this.value" title="Billed %">
-      <button class="btn-xs danger" onclick="feePhaseRows.splice(${i},1);renderFeePhaseList()">✕</button>
+      <button class="btn-xs danger" onclick="feePhaseRows.splice(${i},1);renderFeeArchPhaseList()">✕</button>
     </div>`).join('');
 }
-function addFeePhaseRow() {
-  feePhaseRows.push({ name:'', alloc:0, billed:0 });
-  renderFeePhaseList();
+
+function renderFeeConsultantList() {
+  document.getElementById('feeConsultantList').innerHTML = feeConsultantRows.map((c,i) => `
+    <div style="display:grid;grid-template-columns:1fr 90px 80px auto;gap:6px;margin-bottom:6px;align-items:center;">
+      <input class="form-input" value="${esc(c.name||'')}" placeholder="Consultant" onchange="feeConsultantRows[${i}].name=this.value">
+      <input class="form-input" type="number" value="${c.total||0}" placeholder="Total$" onchange="feeConsultantRows[${i}].total=this.value" title="Contract Total">
+      <input class="form-input" type="number" value="${c.billed||0}" placeholder="Billed%" onchange="feeConsultantRows[${i}].billed=this.value" title="Billed %">
+      <button class="btn-xs danger" onclick="feeConsultantRows.splice(${i},1);renderFeeConsultantList()">✕</button>
+    </div>`).join('');
 }
+
+function addArchPhaseRow() {
+  feePhaseRows.push({ name:'', alloc:0, billed:0 });
+  renderFeeArchPhaseList();
+}
+
+function addConsultantRow() {
+  feeConsultantRows.push({ name:'', total:0, billed:0 });
+  renderFeeConsultantList();
+}
+
 function saveFeePlan() {
-  feePlan = { total: parseFloat(document.getElementById('fee_total').value)||0, phases: feePhaseRows };
+  feePlan = {
+    archTotal:   parseFloat(document.getElementById('fee_arch_total').value)||0,
+    archPhases:  feePhaseRows,
+    consultants: feeConsultantRows,
+  };
   save(); closeModal('feeModal'); renderDashboard();
 }
+
+// Keep old aliases for compatibility
+function renderFeePhaseList() { renderFeeArchPhaseList(); }
+function addFeePhaseRow() { addArchPhaseRow(); }
 
 // Team
 function saveMember() {
@@ -2058,13 +2303,83 @@ function saveMember() {
     company: document.getElementById('mb_company').value.trim(),
     role:    document.getElementById('mb_role').value.trim(),
     email:   document.getElementById('mb_email').value.trim(),
-    phone:   document.getElementById('mb_phone').value.trim(),
+    phone:   formatPhone(document.getElementById('mb_phone').value.trim()),
+    note:    document.getElementById('mb_note').value.trim(),
   });
   save(); closeModal('memberModal'); renderDashboard();
 }
+function formatPhone(raw) {
+  const digits = raw.replace(/\D/g, '');
+  if(digits.length === 10) return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+  if(digits.length === 11 && digits[0] === '1') return `(${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
+  return raw; // return as-is if not 10/11 digits
+}
+
+function delMemberConfirm(idx, btn) {
+  if(delMemberPending === idx) {
+    clearTimeout(delMemberTimer);
+    delMemberPending = null;
+    delMember(idx);
+  } else {
+    if(delMemberPending !== null) {
+      clearTimeout(delMemberTimer);
+      // reset previous button
+      document.querySelectorAll('.btn-del-member').forEach(b => {
+        b.textContent = 'Delete';
+        b.style.cssText = '';
+      });
+    }
+    delMemberPending = idx;
+    btn.textContent = 'Confirm?';
+    btn.style.cssText = 'background:#C84B2F;color:white;border-color:#C84B2F';
+    delMemberTimer = setTimeout(() => {
+      delMemberPending = null;
+      btn.textContent = 'Delete';
+      btn.style.cssText = '';
+    }, 3000);
+  }
+}
+
 function delMember(i) {
   teamMembers.splice(i, 1);
   save(); renderDashboard();
+}
+
+function openEditMember(i) {
+  editingMemberIdx = i;
+  const m = teamMembers[i];
+  if(!m) { alert('Member not found at index ' + i); return; }
+  document.getElementById('em_name').value    = m.name    || '';
+  document.getElementById('em_type').value    = m.type    || '';
+  document.getElementById('em_company').value = m.company || '';
+  document.getElementById('em_role').value    = m.role    || '';
+  document.getElementById('em_email').value   = m.email   || '';
+  document.getElementById('em_phone').value   = m.phone   || '';
+  document.getElementById('em_note').value    = m.note    || '';
+  const modal = document.getElementById('editMemberModal');
+  if(!modal) { alert('Modal not found'); return; }
+  modal.classList.add('open');
+  modal.style.display = 'flex';
+}
+
+function saveEditMember() {
+  if(editingMemberIdx === null || !teamMembers[editingMemberIdx]) {
+    alert('No member selected'); return;
+  }
+  const name = document.getElementById('em_name').value.trim();
+  if(!name) { alert('Name is required'); return; }
+  teamMembers[editingMemberIdx] = {
+    ...teamMembers[editingMemberIdx],
+    name,
+    type:    document.getElementById('em_type').value,
+    company: document.getElementById('em_company').value.trim(),
+    role:    document.getElementById('em_role').value.trim(),
+    email:   document.getElementById('em_email').value.trim(),
+    phone:   formatPhone(document.getElementById('em_phone').value.trim()),
+    note:    document.getElementById('em_note').value.trim(),
+  };
+  editingMemberIdx = null;
+  save(); closeModal('editMemberModal'); renderDashboard();
 }
 
 // Docs
@@ -2082,8 +2397,7 @@ function delDoc(i) {
 
 // ── SCHEDULE VIEW ──────────────────────────────────────────────────────────
 let scheduleVisible = false;
-const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+// ── SCHEDULE VIEW ──────────────────────────────────────────────────────────
 
 function weekday(dateStr) {
   if(!dateStr) return '';
@@ -2108,21 +2422,6 @@ function msClass(dateStr) {
   if(isOverdue(dateStr)) return 'overdue';
   if(isMilestoneSoon(dateStr)) return 'soon';
   return 'future';
-}
-
-function toggleScheduleView() {
-  scheduleVisible = !scheduleVisible;
-  document.getElementById('scheduleView').style.display  = scheduleVisible ? 'block' : 'none';
-  document.getElementById('mainContent').style.display   = scheduleVisible ? 'none'  : 'block';
-  document.getElementById('chaseBar').style.display     = scheduleVisible ? 'none' : '';
-  document.getElementById('tableHeader').style.display  = scheduleVisible ? 'none' : 'grid';
-  document.getElementById('newEntryBtn').style.display   = scheduleVisible ? 'none'  : '';
-  document.getElementById('archiveBtn').style.display    = scheduleVisible ? 'none'  : '';
-  document.getElementById('filterGroup').style.display   = scheduleVisible ? 'none'  : '';
-  document.getElementById('scheduleBtn').textContent     = scheduleVisible ? '✕ Close Schedule' : '📅 Schedule';
-  document.getElementById('scheduleBtn').style.borderColor = scheduleVisible ? 'var(--accent)' : 'var(--blue)';
-  document.getElementById('scheduleBtn').style.color       = scheduleVisible ? 'var(--accent)' : 'var(--blue)';
-  if(scheduleVisible) renderSchedule();
 }
 
 function renderSchedule() {
@@ -2297,6 +2596,68 @@ function renderScope() {
   return html;
 }
 
+function renderTeamTable() {
+  const el = document.getElementById('dashTeam');
+  if(!el) return;
+  if(teamMembers.length === 0) {
+    el.innerHTML = '<div style="color:var(--text2);font-size:12px;">No team members yet.</div>';
+    return;
+  }
+
+  // Group by type, then alphabetical within each group
+  let html = '';
+  const grouped = {};
+  const untyped = [];
+  teamMembers.forEach((m,i) => {
+    const t = (m.type||'').toLowerCase();
+    if(MEMBER_TYPES.includes(t)) {
+      if(!grouped[t]) grouped[t] = [];
+      grouped[t].push({m,i});
+    } else {
+      untyped.push({m,i});
+    }
+  });
+
+  const renderRows = (members) => members
+    .sort((a,b) => {
+      const compA = (a.m.company||'').toLowerCase();
+      const compB = (b.m.company||'').toLowerCase();
+      if(compA !== compB) return compA.localeCompare(compB);
+      return (a.m.name||'').localeCompare(b.m.name||'');
+    })
+    .map(({m, i: originalIdx}) => `
+      <tr>
+        <td><strong>${esc(m.name)}</strong></td>
+        <td><span class="team-company">${esc(m.company||'—')}</span></td>
+        <td>${esc(m.role||'—')}</td>
+        <td style="font-size:11px;color:var(--text2);font-style:italic">${esc(m.note||'—')}</td>
+        <td style="font-family:var(--mono);font-size:11px">${esc(m.email||'—')}</td>
+        <td style="font-family:var(--mono);font-size:11px">${esc(m.phone||'—')}</td>
+        <td style="display:flex;gap:4px;padding-top:6px">
+          <button class="team-copy-btn" onclick="copyMemberInfo(${originalIdx},this)">Copy</button>
+          <button class="btn-xs" onclick="openEditMember(${originalIdx})">Edit</button>
+          <button class="btn-xs danger btn-del-member" onclick="delMemberConfirm(${originalIdx},this)">Delete</button>
+        </td>
+      </tr>`).join('');
+
+  html = `<table class="team-table"><thead><tr>
+    <th>Name</th><th>Company</th><th>Role</th><th>Note</th><th>Email</th><th>Phone</th><th></th>
+  </tr></thead><tbody>`;
+
+  MEMBER_TYPES.forEach(type => {
+    if(grouped[type] && grouped[type].length > 0) {
+      html += `<tr><td colspan="6" style="padding:10px 0 4px;font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);border-bottom:1px solid var(--border)">${MEMBER_TYPE_LABEL[type]}</td></tr>`;
+      html += renderRows(grouped[type]);
+    }
+  });
+  if(untyped.length > 0) {
+    html += `<tr><td colspan="6" style="padding:10px 0 4px;font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);border-bottom:1px solid var(--border)">Other</td></tr>`;
+    html += renderRows(untyped);
+  }
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
 // ── MILESTONES ─────────────────────────────────────────────────────────────
 function saveMilestone() {
   const name = document.getElementById('ms_name').value.trim();
@@ -2378,10 +2739,11 @@ function loadFromFile(input) {
         localStorage.setItem('dt_team',        JSON.stringify(teamMembers));
         localStorage.setItem('dt_docs',        JSON.stringify(docLinks));
         localStorage.setItem('dt_fee',         JSON.stringify(feePlan));
+        localStorage.setItem('dt_scope',       scopeText);
         unsavedChanges = false;
         document.getElementById('loadPromptModal').classList.remove('open');
         try {
-          render();
+          switchTab('dashboard');
         } catch(renderErr) {
           alert('Loaded OK but render error: ' + renderErr.message);
         }
@@ -2466,7 +2828,6 @@ localStorage.removeItem('dt_milestones');
 localStorage.removeItem('dt_project');
 localStorage.removeItem('dt_counter');
 localStorage.removeItem('dt_projectInfo');
-localStorage.removeItem('dt_team');
 localStorage.removeItem('dt_docs');
 localStorage.removeItem('dt_fee');
 issues = [];
@@ -2483,8 +2844,7 @@ scopeText = '';
 unsavedChanges = false;
 resetSaveReminder();
 render();
-// Show dashboard by default
-toggleDashboard();
+switchTab('dashboard');
 </script>
 </body>
 </html>
